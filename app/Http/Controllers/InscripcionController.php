@@ -1,0 +1,205 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StoreInscripcionRequest;
+use App\Http\Requests\UpdateInscripcionRequest;
+use App\Models\Evento;
+use App\Models\Inscripcion;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Response;
+
+class InscripcionController extends Controller
+{
+    public function index(): Response|RedirectResponse
+    {
+        $equipo = auth()->user()?->equipo()->first();
+
+        if (! $equipo) {
+            return redirect()
+                ->route('equipos.index')
+                ->with('error', 'Necesitás un equipo para ver tus inscripciones.');
+        }
+
+        $inscripciones = Inscripcion::with([
+                'evento',
+                'equipo',
+            ])
+            ->where('equipo_id', $equipo->id)
+            ->latest()
+            ->get()
+            ->map(fn (Inscripcion $inscripcion) => [
+                'id' => $inscripcion->id,
+                'estado_inscripcion' => $inscripcion->estado_inscripcion,
+                'cuota_inscripcion' => $inscripcion->cuota_inscripcion,
+                'cuota_pagada' => $inscripcion->cuota_pagada,
+                'fecha_inscripcion' => optional($inscripcion->fecha_inscripcion)->format('Y-m-d H:i'),
+                'observaciones' => $inscripcion->observaciones,
+                'evento' => $inscripcion->evento ? [
+                    'id' => $inscripcion->evento->id,
+                    'nombre_evento' => $inscripcion->evento->nombre_evento,
+                ] : null,
+                'equipo' => $inscripcion->equipo ? [
+                    'id' => $inscripcion->equipo->id,
+                    'nombre_equipo' => $inscripcion->equipo->nombre_equipo,
+                ] : null,
+            ]);
+
+        return inertia('inscripciones/index', [
+            'inscripciones' => $inscripciones,
+        ]);
+    }
+
+    public function create(Request $request): Response
+    {
+        $eventoId = $request->integer('evento_id');
+        $eventoSeleccionado = null;
+
+        if ($eventoId) {
+            $evento = Evento::query()
+                ->where('estado_evento', 'abierto')
+                ->find($eventoId);
+
+            if ($evento) {
+                $eventoSeleccionado = [
+                    'id' => $evento->id,
+                    'nombre_evento' => $evento->nombre_evento,
+                    'ubicacion_evento' => $evento->ubicacion_evento,
+                    'fecha_inicio' => optional($evento->fecha_inicio)->format('Y-m-d'),
+                    'fecha_fin' => optional($evento->fecha_fin)->format('Y-m-d'),
+                    'cupo_evento' => $evento->cupo_evento,
+                ];
+            }
+        }
+
+        $eventos = Evento::query()
+            ->where('estado_evento', 'abierto')
+            ->orderBy('fecha_inicio')
+            ->get()
+            ->map(fn (Evento $evento) => [
+                'id' => $evento->id,
+                'nombre_evento' => $evento->nombre_evento,
+                'ubicacion_evento' => $evento->ubicacion_evento,
+                'fecha_inicio' => optional($evento->fecha_inicio)->format('Y-m-d'),
+                'fecha_fin' => optional($evento->fecha_fin)->format('Y-m-d'),
+                'cupo_evento' => $evento->cupo_evento,
+            ]);
+
+        return inertia('inscripciones/create', [
+            'eventoSeleccionado' => $eventoSeleccionado,
+            'eventos' => $eventos,
+        ]);
+    }
+
+    public function store(StoreInscripcionRequest $request): RedirectResponse
+    {
+        $equipo = auth()->user()?->equipo()->first();
+
+        if (! $equipo) {
+            return redirect()
+                ->route('equipos.index')
+                ->with('error', 'Necesitás un equipo para inscribirte a un torneo.');
+        }
+
+        $datos = $request->validated();
+
+        $evento = Evento::findOrFail($datos['evento_id']);
+
+        if ($evento->estado_evento !== 'abierto') {
+            return redirect()
+                ->route('eventos.show', $evento)
+                ->with('error', 'Este torneo no acepta nuevas inscripciones.');
+        }
+
+        $duplicada = Inscripcion::query()
+            ->where('evento_id', $evento->id)
+            ->where('equipo_id', $equipo->id)
+            ->exists();
+
+        if ($duplicada) {
+            return redirect()
+                ->route('inscripciones.index')
+                ->with('error', 'Tu equipo ya está inscripto en este torneo.');
+        }
+
+        $ocupados = Inscripcion::query()
+            ->where('evento_id', $evento->id)
+            ->whereIn('estado_inscripcion', ['pendiente', 'confirmada'])
+            ->count();
+
+        if ($ocupados >= $evento->cupo_evento) {
+            return redirect()
+                ->route('eventos.show', $evento)
+                ->with('error', 'El torneo ya alcanzó el cupo máximo.');
+        }
+
+        Inscripcion::create([
+            'evento_id' => $evento->id,
+            'equipo_id' => $equipo->id,
+            'fecha_inscripcion' => now(),
+            'estado_inscripcion' => 'pendiente',
+            'cuota_inscripcion' => $datos['cuota_inscripcion'] ?? null,
+            'cuota_pagada' => false,
+            'observaciones' => $datos['observaciones'] ?? null,
+        ]);
+
+        return redirect()
+            ->route('inscripciones.index')
+            ->with('success', 'Inscripción creada correctamente');
+    }
+
+    public function show(Inscripcion $inscripcion): RedirectResponse
+    {
+        $this->autorizarInscripcion($inscripcion);
+
+        return redirect()
+            ->route('inscripciones.index')
+            ->with('info', 'La vista de detalle de la inscripción todavía no está disponible.');
+    }
+
+    public function edit(Inscripcion $inscripcion): RedirectResponse
+    {
+        $this->autorizarInscripcion($inscripcion);
+
+        return redirect()
+            ->route('inscripciones.index')
+            ->with('info', 'La vista de edición de inscripciones todavía no está disponible.');
+    }
+
+    public function update(
+        UpdateInscripcionRequest $request,
+        Inscripcion $inscripcion
+    ): RedirectResponse
+    {
+        $this->autorizarInscripcion($inscripcion);
+
+        $inscripcion->update($request->validated());
+
+        return redirect()
+            ->route('inscripciones.index')
+            ->with('success', 'Inscripción actualizada');
+    }
+
+    public function destroy(Inscripcion $inscripcion): RedirectResponse
+    {
+        $this->autorizarInscripcion($inscripcion);
+
+        $inscripcion->delete();
+
+        return redirect()
+            ->route('inscripciones.index')
+            ->with('success', 'Inscripción eliminada');
+    }
+
+    private function autorizarInscripcion(Inscripcion $inscripcion): void
+    {
+        $user = auth()->user();
+        $equipoId = $user?->equipo()->value('id');
+
+        abort_if(
+            ! $user || ($inscripcion->equipo_id !== $equipoId && ! $user->is_admin),
+            403
+        );
+    }
+}
