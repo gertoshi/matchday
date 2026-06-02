@@ -30,6 +30,8 @@ createInertiaApp({
                 return null;
             case name.startsWith('perfil_usuario/'):
                 return null;
+            case name.startsWith('admin/'):
+                return null;
             case name.startsWith('auth/'):
                 return null;
             case name.startsWith('settings/'):

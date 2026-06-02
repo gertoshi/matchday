@@ -13,12 +13,13 @@ class Equipo extends Model
 
     protected $table = 'equipos';
 
-    //campos que se pueden guardar
+    // campos que se pueden guardar
     protected $fillable = [
         'user_id',
         'nombre_equipo',
         'escudo_equipo',
         'plantilla',
+        'estado_equipo',
     ];
 
     /*
@@ -31,15 +32,15 @@ class Equipo extends Model
         return $this->belongsTo(User::class);
     }
 
-    //Relacion:
-    //Un equipo tiene muchos jugadores
+    // Relacion:
+    // Un equipo tiene muchos jugadores
     public function jugadores(): HasMany
     {
         return $this->hasMany(Jugador::class);
     }
 
-    //Relacion:
-    //Un equipo tiene muchas inscripciones
+    // Relacion:
+    // Un equipo tiene muchas inscripciones
     public function inscripciones(): HasMany
     {
         return $this->hasMany(Inscripcion::class);

@@ -48,6 +48,11 @@ class User extends Authenticatable
         return $this->hasMany(Evento::class);
     }
 
+    public function sanciones(): HasMany
+    {
+        return $this->hasMany(Sancion::class);
+    }
+
     protected function casts(): array
     {
         return [

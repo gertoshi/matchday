@@ -118,6 +118,7 @@ const team: TeamMember[] = [
         description:
             'Responsable de la lógica del sistema, controladores, validaciones y conexión con la base de datos.',
         initials: 'GN',
+        photo: '/images/user-german.jpeg',
     },
     {
         name: 'Imanol Silvera',
@@ -125,7 +126,7 @@ const team: TeamMember[] = [
         description:
             'Responsable del modelado de datos, relaciones entre entidades y estructura de la base de datos.',
         initials: 'IS',
-        photo: '/images/user-imanol.jpeg',
+        photo: '/images/user-imanol.jpeg'
     },
     {
         name: 'Bruno Pablo',
@@ -133,6 +134,7 @@ const team: TeamMember[] = [
         description:
             'Encargado de la implementación de la base de datos y apoyo en el diseño visual de la interfaz.',
         initials: 'BP',
+        photo: '/images/user-bruno.jpeg',
     },
 ];
 
