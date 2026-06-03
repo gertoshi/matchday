@@ -1,5 +1,6 @@
-import { router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Menu } from 'lucide-react';
+import type { User } from '@/types';
 
 type HeaderProps = {
     title: string;
@@ -7,13 +8,15 @@ type HeaderProps = {
     onOpenSidebar?: () => void;
 };
 
-type AuthUser = {
-    name: string;
-    email: string;
-} | null;
+type AuthUser = Pick<User, 'name' | 'email' | 'is_admin'> | null;
 
-export default function Header({ title, subtitle, onOpenSidebar }: HeaderProps) {
+export default function Header({
+    title,
+    subtitle,
+    onOpenSidebar,
+}: HeaderProps) {
     const { auth } = usePage<{ auth: { user: AuthUser } }>().props;
+    const canAccessAdmin = Boolean(auth.user?.is_admin);
 
     return (
         <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-white/95 backdrop-blur">
@@ -28,18 +31,27 @@ export default function Header({ title, subtitle, onOpenSidebar }: HeaderProps) 
                     </button>
 
                     <div className="min-w-0">
-                    <h2 className="truncate text-xl font-semibold text-[var(--foreground)] sm:text-2xl">
-                        {title}
-                    </h2>
-                    <p className="mt-1 line-clamp-2 text-sm text-[var(--muted-foreground)]">
-                        {subtitle || 'Matchday'}
-                    </p>
+                        <h2 className="truncate text-xl font-semibold text-[var(--foreground)] sm:text-2xl">
+                            {title}
+                        </h2>
+                        <p className="mt-1 line-clamp-2 text-sm text-[var(--muted-foreground)]">
+                            {subtitle || 'Matchday'}
+                        </p>
                     </div>
                 </div>
 
                 <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
+                    {canAccessAdmin && (
+                        <Link
+                            href="/admin"
+                            className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white transition-all duration-200 hover:bg-blue-700"
+                        >
+                            Panel Admin
+                        </Link>
+                    )}
+
                     <div className="rounded-2xl border border-[var(--border)] bg-[var(--accent)] px-3 py-2 text-right sm:px-4">
-                        <p className="text-xs font-medium uppercase tracking-wide text-[var(--accent-foreground)]">
+                        <p className="text-xs font-medium tracking-wide text-[var(--accent-foreground)] uppercase">
                             Usuario
                         </p>
                         <p className="mt-1 max-w-32 truncate text-sm font-semibold text-[var(--foreground)] sm:max-w-40">
