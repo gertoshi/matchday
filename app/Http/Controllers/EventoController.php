@@ -28,6 +28,8 @@ class EventoController extends Controller
                 'fecha_fin' => optional($evento->fecha_fin)->format('Y-m-d'),
                 'descripcion_evento' => $evento->descripcion_evento,
                 'formato_evento' => $evento->formato_evento,
+                'tipo_inscripcion' => $evento->tipo_inscripcion,
+                'monto_inscripcion' => $evento->monto_inscripcion,
                 'inscripciones_count' => $evento->inscripciones_count,
                 'user' => $evento->user ? [
                     'id' => $evento->user->id,
@@ -49,10 +51,12 @@ class EventoController extends Controller
 
     public function store(StoreEventoRequest $request): RedirectResponse
     {
+        $datos = $this->datosEvento($request->validated());
+
         Evento::create([
             'user_id' => auth()->id(),
-            ...$request->validated(),
-            'estado_evento' => $request->validated()['estado_evento'] ?? 'abierto',
+            ...$datos,
+            'estado_evento' => $datos['estado_evento'] ?? 'abierto',
         ]);
 
         return redirect()
@@ -67,8 +71,14 @@ class EventoController extends Controller
             'inscripciones.equipo',
             'partidos',
         ]);
+        $evento->loadCount('fixtureGrupos');
 
         $user = auth()->user();
+        $inscripcionesActuales = $evento->inscripciones
+            ->whereIn('estado_inscripcion', ['pendiente', 'confirmada'])
+            ->count();
+        $canManage = $user !== null
+            && ($evento->user_id === $user->id || (bool) $user->is_admin);
 
         return inertia('eventos/show', [
             'evento' => [
@@ -81,6 +91,14 @@ class EventoController extends Controller
                 'fecha_fin' => optional($evento->fecha_fin)->format('Y-m-d'),
                 'descripcion_evento' => $evento->descripcion_evento,
                 'formato_evento' => $evento->formato_evento,
+                'tipo_inscripcion' => $evento->tipo_inscripcion,
+                'monto_inscripcion' => $evento->monto_inscripcion,
+                'inscripciones_actuales' => $inscripcionesActuales,
+                'fixture_generado' => $evento->fixture_grupos_count > 0,
+                'can_generate_fixture' => $canManage
+                    && $evento->fixture_grupos_count === 0
+                    && in_array((int) $evento->cupo_evento, [4, 8], true)
+                    && $inscripcionesActuales === (int) $evento->cupo_evento,
                 'user' => $evento->user ? [
                     'id' => $evento->user->id,
                     'name' => $evento->user->name,
@@ -99,8 +117,7 @@ class EventoController extends Controller
                     'ubicacion_partido' => $partido->ubicacion_partido,
                     'categoria_partido' => $partido->categoria_partido,
                 ])->values(),
-                'can_manage' => $user !== null
-                    && ($evento->user_id === $user->id || (bool) $user->is_admin),
+                'can_manage' => $canManage,
             ],
             'hasEquipo' => $user?->equipo()->exists() ?? false,
         ]);
@@ -121,6 +138,8 @@ class EventoController extends Controller
                 'fecha_fin' => optional($evento->fecha_fin)->format('Y-m-d'),
                 'descripcion_evento' => $evento->descripcion_evento,
                 'formato_evento' => $evento->formato_evento,
+                'tipo_inscripcion' => $evento->tipo_inscripcion,
+                'monto_inscripcion' => $evento->monto_inscripcion,
             ],
         ]);
     }
@@ -129,7 +148,7 @@ class EventoController extends Controller
     {
         $this->autorizarGestionEvento($evento);
 
-        $evento->update($request->validated());
+        $evento->update($this->datosEvento($request->validated()));
 
         return redirect()
             ->route('eventos.show', $evento)
@@ -155,5 +174,18 @@ class EventoController extends Controller
             ! $user || ($evento->user_id !== $user->id && ! $user->is_admin),
             403
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $datos
+     * @return array<string, mixed>
+     */
+    private function datosEvento(array $datos): array
+    {
+        if (($datos['tipo_inscripcion'] ?? 'gratis') === 'gratis') {
+            $datos['monto_inscripcion'] = null;
+        }
+
+        return $datos;
     }
 }

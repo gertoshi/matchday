@@ -68,13 +68,14 @@ export default function Index({ inscripciones }: Props) {
                                         <span className="text-sm text-gray-500">
                                             Fecha: {inscripcion.fecha_inscripcion}
                                         </span>
-                                        <span className="text-sm text-gray-500">
-                                            Pago: {inscripcion.cuota_pagada ? 'Pagada' : 'Pendiente'}
-                                        </span>
                                     </div>
-                                    {inscripcion.cuota_inscripcion && (
+                                    {hasCuota(inscripcion.cuota_inscripcion) ? (
                                         <p className="mt-2 text-sm text-gray-500">
-                                            Cuota: ${inscripcion.cuota_inscripcion}
+                                            Monto: {formatMoney(inscripcion.cuota_inscripcion)} · {inscripcion.cuota_pagada ? 'Pago realizado' : 'Pago pendiente'}
+                                        </p>
+                                    ) : (
+                                        <p className="mt-2 text-sm text-emerald-700">
+                                            Inscripción gratuita
                                         </p>
                                     )}
                                     {inscripcion.observaciones && (
@@ -90,6 +91,19 @@ export default function Index({ inscripciones }: Props) {
             </div>
         </AppShell>
     );
+}
+
+function hasCuota(value?: string | null) {
+    return Number(value ?? 0) > 0;
+}
+
+function formatMoney(value?: string | null) {
+    const amount = Number(value ?? 0);
+
+    return `$${amount.toLocaleString('es-AR', {
+        minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+        maximumFractionDigits: 2,
+    })}`;
 }
 
 Index.layout = null;

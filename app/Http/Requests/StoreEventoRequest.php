@@ -29,8 +29,7 @@ class StoreEventoRequest extends FormRequest
             'cupo_evento' => [
                 'required',
                 'integer',
-                'min:2',
-                'max:100',
+                'in:4,8',
             ],
 
             'fecha_inicio' => [
@@ -48,6 +47,18 @@ class StoreEventoRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
+            ],
+
+            'tipo_inscripcion' => [
+                'required',
+                'in:gratis,pago',
+            ],
+
+            'monto_inscripcion' => [
+                'nullable',
+                'required_if:tipo_inscripcion,pago',
+                'numeric',
+                'min:1',
             ],
 
             'estado_evento' => [

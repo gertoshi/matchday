@@ -23,24 +23,31 @@ class Evento extends Model
         'fecha_fin',
         'descripcion_evento',
         'formato_evento',
+        'tipo_inscripcion',
+        'monto_inscripcion',
     ];
 
-    //Relacion:
-    //Un Evento pertenece a un usuario
+    // Relacion:
+    // Un Evento pertenece a un usuario
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    //Relacion:
-    //Un evento tiene muchos partidos
+    // Relacion:
+    // Un evento tiene muchos partidos
     public function partidos(): HasMany
     {
         return $this->hasMany(Partido::class);
     }
 
-    //Relacion:
-    //Un evento tiene muhcas inscripciones
+    public function fixtureGrupos(): HasMany
+    {
+        return $this->hasMany(FixtureGrupo::class);
+    }
+
+    // Relacion:
+    // Un evento tiene muhcas inscripciones
     public function inscripciones(): HasMany
     {
         return $this->hasMany(Inscripcion::class);
@@ -51,6 +58,7 @@ class Evento extends Model
         return [
             'fecha_inicio' => 'date',
             'fecha_fin' => 'date',
+            'monto_inscripcion' => 'decimal:2',
         ];
     }
 }

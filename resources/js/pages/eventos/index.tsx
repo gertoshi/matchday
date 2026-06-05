@@ -17,6 +17,8 @@ type Evento = {
     fecha_fin: string;
     descripcion_evento?: string | null;
     formato_evento: string;
+    tipo_inscripcion: 'gratis' | 'pago';
+    monto_inscripcion?: string | null;
     inscripciones_count: number;
     user: EventoUser;
     can_manage: boolean;
@@ -93,6 +95,10 @@ export default function Index({ eventos }: Props) {
                                         >
                                             {evento.estado_evento}
                                         </span>
+                                        <InscripcionBadge
+                                            tipo={evento.tipo_inscripcion}
+                                            monto={evento.monto_inscripcion}
+                                        />
                                         <h2 className="mt-4 text-2xl font-bold text-gray-900">
                                             {evento.nombre_evento}
                                         </h2>
@@ -115,6 +121,10 @@ export default function Index({ eventos }: Props) {
                                     <InfoRow label="Inicio" value={evento.fecha_inicio} />
                                     <InfoRow label="Fin" value={evento.fecha_fin} />
                                     <InfoRow label="Formato" value={evento.formato_evento} />
+                                    <InfoRow
+                                        label="Inscripción"
+                                        value={inscripcionLabel(evento.tipo_inscripcion, evento.monto_inscripcion)}
+                                    />
                                     <InfoRow
                                         label="Organizador"
                                         value={evento.user?.name ?? 'Sin organizador'}
@@ -179,6 +189,41 @@ function InfoRow({ label, value }: { label: string; value: string }) {
             <p className="mt-2 font-semibold text-gray-900">{value}</p>
         </div>
     );
+}
+
+function InscripcionBadge({
+    tipo,
+    monto,
+}: {
+    tipo: Evento['tipo_inscripcion'];
+    monto?: string | null;
+}) {
+    if (tipo === 'pago') {
+        return (
+            <span className="ml-2 inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                Pago: {formatMoney(monto)}
+            </span>
+        );
+    }
+
+    return (
+        <span className="ml-2 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
+            Gratis / A beneficio
+        </span>
+    );
+}
+
+function inscripcionLabel(tipo: Evento['tipo_inscripcion'], monto?: string | null) {
+    return tipo === 'pago' ? `${formatMoney(monto)} por equipo` : 'Gratis';
+}
+
+function formatMoney(value?: string | null) {
+    const amount = Number(value ?? 0);
+
+    return `$${amount.toLocaleString('es-AR', {
+        minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+        maximumFractionDigits: 2,
+    })}`;
 }
 
 Index.layout = null;

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminUsuarioController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EquipoController;
 use App\Http\Controllers\EventoController;
+use App\Http\Controllers\FixtureController;
 use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\JugadorController;
 use App\Http\Controllers\PartidoController;
@@ -93,6 +94,12 @@ Route::middleware('auth')->group(function () {
         EventoController::class
     );
 
+    Route::get('/eventos/{evento}/fixture', [FixtureController::class, 'show'])
+        ->name('eventos.fixture.show');
+
+    Route::post('/eventos/{evento}/fixture/generar', [FixtureController::class, 'generar'])
+        ->name('eventos.fixture.generar');
+
     Route::resource(
         'inscripciones',
         InscripcionController::class
@@ -102,6 +109,9 @@ Route::middleware('auth')->group(function () {
         'partidos',
         PartidoController::class
     );
+
+    Route::put('/partidos/{partido}/resultado', [FixtureController::class, 'actualizarResultado'])
+        ->name('partidos.resultado.update');
 
     /*
     |--------------------------------------------------------------------------

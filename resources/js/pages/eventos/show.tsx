@@ -32,6 +32,11 @@ type Evento = {
     fecha_fin: string;
     descripcion_evento?: string | null;
     formato_evento: string;
+    tipo_inscripcion: 'gratis' | 'pago';
+    monto_inscripcion?: string | null;
+    inscripciones_actuales: number;
+    fixture_generado: boolean;
+    can_generate_fixture: boolean;
     user: EventoUser;
     inscripciones: Inscripcion[];
     partidos: Partido[];
@@ -69,6 +74,10 @@ export default function Show({ evento, hasEquipo }: Props) {
                         <span className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700">
                             {evento.estado_evento}
                         </span>
+                        <InscripcionBadge
+                            tipo={evento.tipo_inscripcion}
+                            monto={evento.monto_inscripcion}
+                        />
                     </div>
 
                     <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -77,12 +86,16 @@ export default function Show({ evento, hasEquipo }: Props) {
                         <InfoRow label="Cupo" value={String(evento.cupo_evento)} />
                         <InfoRow label="Formato" value={evento.formato_evento} />
                         <InfoRow
+                            label="Inscripción"
+                            value={inscripcionLabel(evento.tipo_inscripcion, evento.monto_inscripcion)}
+                        />
+                        <InfoRow
                             label="Organizador"
                             value={evento.user?.name ?? 'Sin organizador'}
                         />
                         <InfoRow
                             label="Inscripciones"
-                            value={String(evento.inscripciones.length)}
+                            value={`${evento.inscripciones_actuales} / ${evento.cupo_evento}`}
                         />
                     </div>
 
@@ -110,12 +123,28 @@ export default function Show({ evento, hasEquipo }: Props) {
                             </Link>
                         )}
 
+                        <Link
+                            href={`/eventos/${evento.id}/fixture`}
+                            className="btn-blue"
+                        >
+                            Ver Fixture
+                        </Link>
+
                         {evento.can_manage && (
                             <Link
                                 href={`/eventos/${evento.id}/edit`}
                                 className="btn-secondary"
                             >
                                 Editar torneo
+                            </Link>
+                        )}
+
+                        {evento.can_generate_fixture && (
+                            <Link
+                                href={`/eventos/${evento.id}/fixture`}
+                                className="btn-primary"
+                            >
+                                Generar Fixture
                             </Link>
                         )}
                     </div>
@@ -197,6 +226,41 @@ function InfoRow({ label, value }: { label: string; value: string }) {
             <p className="mt-2 font-semibold text-gray-900">{value}</p>
         </div>
     );
+}
+
+function InscripcionBadge({
+    tipo,
+    monto,
+}: {
+    tipo: Evento['tipo_inscripcion'];
+    monto?: string | null;
+}) {
+    if (tipo === 'pago') {
+        return (
+            <span className="rounded-full bg-blue-100 px-4 py-2 text-sm font-medium text-blue-700">
+                Pago: {formatMoney(monto)}
+            </span>
+        );
+    }
+
+    return (
+        <span className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700">
+            Gratis / A beneficio
+        </span>
+    );
+}
+
+function inscripcionLabel(tipo: Evento['tipo_inscripcion'], monto?: string | null) {
+    return tipo === 'pago' ? `${formatMoney(monto)} por equipo` : 'Gratis';
+}
+
+function formatMoney(value?: string | null) {
+    const amount = Number(value ?? 0);
+
+    return `$${amount.toLocaleString('es-AR', {
+        minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+        maximumFractionDigits: 2,
+    })}`;
 }
 
 Show.layout = null;

@@ -23,9 +23,9 @@ class InscripcionController extends Controller
         }
 
         $inscripciones = Inscripcion::with([
-                'evento',
-                'equipo',
-            ])
+            'evento',
+            'equipo',
+        ])
             ->where('equipo_id', $equipo->id)
             ->latest()
             ->get()
@@ -69,6 +69,8 @@ class InscripcionController extends Controller
                     'fecha_inicio' => optional($evento->fecha_inicio)->format('Y-m-d'),
                     'fecha_fin' => optional($evento->fecha_fin)->format('Y-m-d'),
                     'cupo_evento' => $evento->cupo_evento,
+                    'tipo_inscripcion' => $evento->tipo_inscripcion,
+                    'monto_inscripcion' => $evento->monto_inscripcion,
                 ];
             }
         }
@@ -84,6 +86,8 @@ class InscripcionController extends Controller
                 'fecha_inicio' => optional($evento->fecha_inicio)->format('Y-m-d'),
                 'fecha_fin' => optional($evento->fecha_fin)->format('Y-m-d'),
                 'cupo_evento' => $evento->cupo_evento,
+                'tipo_inscripcion' => $evento->tipo_inscripcion,
+                'monto_inscripcion' => $evento->monto_inscripcion,
             ]);
 
         return inertia('inscripciones/create', [
@@ -139,8 +143,12 @@ class InscripcionController extends Controller
             'equipo_id' => $equipo->id,
             'fecha_inscripcion' => now(),
             'estado_inscripcion' => 'pendiente',
-            'cuota_inscripcion' => $datos['cuota_inscripcion'] ?? null,
+            'cuota_inscripcion' => $evento->tipo_inscripcion === 'pago'
+                ? $evento->monto_inscripcion
+                : 0,
             'cuota_pagada' => false,
+            'fecha_pago' => null,
+            'metodo_pago' => null,
             'observaciones' => $datos['observaciones'] ?? null,
         ]);
 
@@ -170,8 +178,7 @@ class InscripcionController extends Controller
     public function update(
         UpdateInscripcionRequest $request,
         Inscripcion $inscripcion
-    ): RedirectResponse
-    {
+    ): RedirectResponse {
         $this->autorizarInscripcion($inscripcion);
 
         $inscripcion->update($request->validated());

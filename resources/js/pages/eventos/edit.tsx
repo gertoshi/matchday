@@ -11,6 +11,8 @@ type Evento = {
     fecha_fin: string;
     descripcion_evento?: string | null;
     formato_evento: string;
+    tipo_inscripcion: 'gratis' | 'pago';
+    monto_inscripcion?: string | null;
 };
 
 type Props = {
@@ -26,8 +28,12 @@ export default function Edit({ evento }: Props) {
         fecha_inicio: evento.fecha_inicio,
         fecha_fin: evento.fecha_fin,
         formato_evento: evento.formato_evento,
+        tipo_inscripcion: evento.tipo_inscripcion,
+        monto_inscripcion: evento.monto_inscripcion ?? '',
         descripcion_evento: evento.descripcion_evento ?? '',
     });
+
+    const esPago = data.tipo_inscripcion === 'pago';
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -76,14 +82,14 @@ export default function Edit({ evento }: Props) {
                                 label="Cupo"
                                 error={errors.cupo_evento}
                                 input={
-                                    <input
-                                        type="number"
-                                        min={2}
-                                        max={100}
+                                    <select
                                         value={data.cupo_evento}
                                         onChange={(e) => setData('cupo_evento', Number(e.target.value))}
-                                        className="app-input mt-2 w-full"
-                                    />
+                                        className="app-select mt-2 w-full"
+                                    >
+                                        <option value={4}>4 equipos (2 grupos de 2)</option>
+                                        <option value={8}>8 equipos (2 grupos de 4)</option>
+                                    </select>
                                 }
                             />
                             <Field
@@ -139,6 +145,52 @@ export default function Edit({ evento }: Props) {
                                 />
                             }
                         />
+
+                        <section className="rounded-3xl border border-gray-200 bg-gray-50 p-5">
+                            <h2 className="text-lg font-bold text-gray-900">
+                                Tipo de inscripción
+                            </h2>
+                            <div className="mt-4 grid gap-6 md:grid-cols-2">
+                                <Field
+                                    label="Tipo"
+                                    error={errors.tipo_inscripcion}
+                                    input={
+                                        <select
+                                            value={data.tipo_inscripcion}
+                                            onChange={(e) => {
+                                                const value = e.target.value as Evento['tipo_inscripcion'];
+                                                setData('tipo_inscripcion', value);
+                                                if (value === 'gratis') {
+                                                    setData('monto_inscripcion', '');
+                                                }
+                                            }}
+                                            className="app-select mt-2 w-full"
+                                        >
+                                            <option value="gratis">Gratis / a beneficio</option>
+                                            <option value="pago">De pago</option>
+                                        </select>
+                                    }
+                                />
+
+                                {esPago && (
+                                    <Field
+                                        label="Monto de inscripción por equipo"
+                                        error={errors.monto_inscripcion}
+                                        input={
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min={0}
+                                                value={data.monto_inscripcion}
+                                                onChange={(e) => setData('monto_inscripcion', e.target.value)}
+                                                placeholder="Ej: 5000"
+                                                className="app-input mt-2 w-full"
+                                            />
+                                        }
+                                    />
+                                )}
+                            </div>
+                        </section>
 
                         <Field
                             label="Descripción"

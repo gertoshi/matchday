@@ -18,11 +18,6 @@ class StoreInscripcionRequest extends FormRequest
                 'required',
                 'exists:eventos,id',
             ],
-            'cuota_inscripcion' => [
-                'nullable',
-                'numeric',
-                'min:0',
-            ],
             'observaciones' => [
                 'nullable',
                 'string',

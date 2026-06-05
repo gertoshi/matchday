@@ -8,6 +8,8 @@ type EventoOption = {
     fecha_inicio: string;
     fecha_fin: string;
     cupo_evento: number;
+    tipo_inscripcion: 'gratis' | 'pago';
+    monto_inscripcion?: string | null;
 };
 
 type Props = {
@@ -18,7 +20,6 @@ type Props = {
 export default function Create({ eventoSeleccionado, eventos }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         evento_id: eventoSeleccionado?.id ? String(eventoSeleccionado.id) : '',
-        cuota_inscripcion: '',
         observaciones: '',
     });
 
@@ -46,7 +47,17 @@ export default function Create({ eventoSeleccionado, eventos }: Props) {
                             <InfoRow label="Inicio" value={eventoSeleccionado.fecha_inicio} />
                             <InfoRow label="Fin" value={eventoSeleccionado.fecha_fin} />
                             <InfoRow label="Cupo" value={String(eventoSeleccionado.cupo_evento)} />
+                            <InfoRow
+                                label="Inscripción"
+                                value={inscripcionLabel(
+                                    eventoSeleccionado.tipo_inscripcion,
+                                    eventoSeleccionado.monto_inscripcion,
+                                )}
+                            />
                         </div>
+                        <p className="mt-5 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+                            La validación del pago se realizará más adelante.
+                        </p>
                     </section>
                 ) : null}
 
@@ -65,7 +76,7 @@ export default function Create({ eventoSeleccionado, eventos }: Props) {
                                     <option value="">Seleccioná un torneo abierto</option>
                                     {eventos.map((evento) => (
                                         <option key={evento.id} value={evento.id}>
-                                            {evento.nombre_evento} · {evento.ubicacion_evento}
+                                            {evento.nombre_evento} · {evento.ubicacion_evento} · {inscripcionLabel(evento.tipo_inscripcion, evento.monto_inscripcion)}
                                         </option>
                                     ))}
                                 </select>
@@ -74,26 +85,6 @@ export default function Create({ eventoSeleccionado, eventos }: Props) {
                                 )}
                             </div>
                         )}
-
-                        <div>
-                            <label className="field-label">
-                                Cuota de inscripción (opcional)
-                            </label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                min={0}
-                                value={data.cuota_inscripcion}
-                                onChange={(e) => setData('cuota_inscripcion', e.target.value)}
-                                placeholder="Ej: 5000"
-                                className="app-input mt-2 w-full"
-                            />
-                            {errors.cuota_inscripcion && (
-                                <p className="mt-2 text-sm text-red-500">
-                                    {errors.cuota_inscripcion}
-                                </p>
-                            )}
-                        </div>
 
                         <div>
                             <label className="field-label">
@@ -142,6 +133,19 @@ function InfoRow({ label, value }: { label: string; value: string }) {
             <p className="mt-2 font-semibold text-gray-900">{value}</p>
         </div>
     );
+}
+
+function inscripcionLabel(tipo: EventoOption['tipo_inscripcion'], monto?: string | null) {
+    return tipo === 'pago' ? `${formatMoney(monto)} por equipo` : 'Gratis / a beneficio';
+}
+
+function formatMoney(value?: string | null) {
+    const amount = Number(value ?? 0);
+
+    return `$${amount.toLocaleString('es-AR', {
+        minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+        maximumFractionDigits: 2,
+    })}`;
 }
 
 Create.layout = null;
