@@ -13,9 +13,12 @@ type Jugador = {
 
 type Props = {
     jugador: Jugador;
+    numerosOcupados: number[];
 };
 
-export default function Edit({ jugador }: Props) {
+const numerosCamiseta = Array.from({ length: 10 }, (_, index) => index + 1);
+
+export default function Edit({ jugador, numerosOcupados }: Props) {
     const { data, setData, put, processing, errors } = useForm({
         nombre_jugador: jugador.nombre_jugador,
         apellido_jugador: jugador.apellido_jugador,
@@ -129,14 +132,21 @@ export default function Edit({ jugador }: Props) {
                                 Número de camiseta
                             </label>
 
-                            <input
-                                type="number"
-                                min={1}
-                                max={99}
+                            <select
                                 value={data.numero_jugador}
                                 onChange={(e) => setData('numero_jugador', Number(e.target.value))}
-                                className="app-input mt-2 w-full"
-                            />
+                                className="app-select mt-2 w-full rounded-xl border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
+                            >
+                                {numerosCamiseta.map((numero) => (
+                                    <option
+                                        key={numero}
+                                        value={numero}
+                                        disabled={numero !== jugador.numero_jugador && numerosOcupados.includes(numero)}
+                                    >
+                                        {numero}
+                                    </option>
+                                ))}
+                            </select>
 
                             {errors.numero_jugador && (
                                 <p className="mt-2 text-sm text-red-500">

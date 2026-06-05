@@ -72,17 +72,18 @@ type Props = {
     partidos: Partido[];
 };
 
-type Tab = 'informacion' | 'fixture' | 'partidos' | 'tabla';
+type Tab = 'informacion' | 'fase_grupos' | 'partidos' | 'tablas' | 'eliminatorias';
 
 const tabs: Array<{ id: Tab; label: string }> = [
     { id: 'informacion', label: 'Información' },
-    { id: 'fixture', label: 'Fixture' },
+    { id: 'fase_grupos', label: 'Fase de Grupos' },
     { id: 'partidos', label: 'Partidos' },
-    { id: 'tabla', label: 'Tabla' },
+    { id: 'tablas', label: 'Tablas' },
+    { id: 'eliminatorias', label: 'Eliminatorias' },
 ];
 
 export default function Fixture({ evento, grupos, partidos }: Props) {
-    const [activeTab, setActiveTab] = useState<Tab>('fixture');
+    const [activeTab, setActiveTab] = useState<Tab>('fase_grupos');
     const [selectedPartido, setSelectedPartido] = useState<Partido | null>(null);
 
     function generarFixture() {
@@ -168,7 +169,7 @@ export default function Fixture({ evento, grupos, partidos }: Props) {
                 ) : (
                     <>
                         {activeTab === 'informacion' && <Informacion evento={evento} grupos={grupos} partidos={partidos} />}
-                        {activeTab === 'fixture' && <FixtureTab evento={evento} grupos={grupos} />}
+                        {activeTab === 'fase_grupos' && <FixtureTab evento={evento} grupos={grupos} />}
                         {activeTab === 'partidos' && (
                             <PartidosTab
                                 partidos={partidos}
@@ -176,7 +177,15 @@ export default function Fixture({ evento, grupos, partidos }: Props) {
                                 onEdit={setSelectedPartido}
                             />
                         )}
-                        {activeTab === 'tabla' && <TablaTab grupos={grupos} />}
+                        {activeTab === 'tablas' && <TablaTab grupos={grupos} />}
+                        {activeTab === 'eliminatorias' && (
+                            <Eliminatorias
+                                cupo={evento.cupo_evento}
+                                partidos={partidos}
+                                canManage={evento.can_manage}
+                                onEdit={setSelectedPartido}
+                            />
+                        )}
                     </>
                 )}
             </div>
@@ -192,13 +201,17 @@ export default function Fixture({ evento, grupos, partidos }: Props) {
 }
 
 function Informacion({ evento, grupos, partidos }: { evento: Evento; grupos: Grupo[]; partidos: Partido[] }) {
+    const partidosGrupo = partidos.filter((partido) => partido.fase === 'grupo');
+    const partidosEliminatorios = partidos.filter((partido) => partido.fase !== 'grupo');
+
     return (
         <section className="app-card">
             <h2 className="section-title">Resumen del fixture</h2>
             <div className="mt-6 grid gap-4 md:grid-cols-3">
                 <InfoBox label="Formato" value={evento.cupo_evento === 8 ? '2 grupos de 4' : '2 grupos de 2'} />
                 <InfoBox label="Grupos generados" value={String(grupos.length)} />
-                <InfoBox label="Partidos de grupo" value={String(partidos.length)} />
+                <InfoBox label="Partidos de grupo" value={String(partidosGrupo.length)} />
+                <InfoBox label="Eliminatorias" value={String(partidosEliminatorios.length)} />
             </div>
         </section>
     );
@@ -236,8 +249,6 @@ function FixtureTab({ evento, grupos }: { evento: Evento; grupos: Grupo[] }) {
                     </section>
                 ))}
             </div>
-
-            <Eliminatorias cupo={evento.cupo_evento} />
         </div>
     );
 }
@@ -294,16 +305,20 @@ function PartidosTab({
                             <p className="text-sm text-gray-500">
                                 Ganador: {partido.ganador_partido ?? 'Sin definir'}
                             </p>
-                            {canManage && (
+                            {partido.estado_partido === 'jugado' ? (
+                                <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                                    Resultado cargado
+                                </span>
+                            ) : canManage ? (
                                 <button
                                     type="button"
                                     onClick={() => onEdit(partido)}
                                     className="btn-secondary py-2"
                                 >
                                     <Pencil className="h-4 w-4" />
-                                    Editar resultado
+                                    Cargar resultado
                                 </button>
-                            )}
+                            ) : null}
                         </div>
                     </article>
                 ))}
@@ -372,10 +387,35 @@ function TablaTab({ grupos }: { grupos: Grupo[] }) {
     );
 }
 
-function Eliminatorias({ cupo }: { cupo: number }) {
-    const semifinales = cupo === 8
-        ? ['1A vs 2B', '1B vs 2A']
-        : ['No aplica para cupo 4'];
+function Eliminatorias({
+    cupo,
+    partidos,
+    canManage,
+    onEdit,
+}: {
+    cupo: number;
+    partidos: Partido[];
+    canManage: boolean;
+    onEdit: (partido: Partido) => void;
+}) {
+    const semifinales = partidos.filter((partido) => partido.fase === 'semifinal');
+    const finales = partidos.filter((partido) => partido.fase === 'final');
+    const final = finales[0] ?? null;
+    const campeon = final?.estado_partido === 'jugado' ? final.ganador_partido : null;
+
+    if (semifinales.length === 0 && finales.length === 0) {
+        return (
+            <section className="app-card text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-700">
+                    <Trophy className="h-8 w-8" />
+                </div>
+                <h2 className="mt-5 text-2xl font-bold text-gray-900">Eliminatorias</h2>
+                <p className="mt-3 text-gray-500">
+                    Pendiente de resultados de fase de grupos.
+                </p>
+            </section>
+        );
+    }
 
     return (
         <section className="app-card">
@@ -385,9 +425,26 @@ function Eliminatorias({ cupo }: { cupo: number }) {
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-3">
-                <BracketColumn title="Semifinales" items={semifinales} />
-                <BracketColumn title="Final" items={cupo === 4 ? ['Ganador Grupo A vs Ganador Grupo B'] : ['Ganador SF 1 vs Ganador SF 2']} />
-                <BracketColumn title="Campeón" items={['Pendiente de resultados']} />
+                <BracketColumn
+                    title="Semifinales"
+                    emptyText={cupo === 4 ? 'Final directa' : 'Pendiente'}
+                    partidos={semifinales}
+                    canManage={canManage}
+                    onEdit={onEdit}
+                />
+                <BracketColumn
+                    title="Final"
+                    emptyText="Pendiente"
+                    partidos={final ? [final] : []}
+                    canManage={canManage}
+                    onEdit={onEdit}
+                />
+                <div>
+                    <p className="mb-3 text-center text-sm font-bold uppercase text-gray-500">Campeón</p>
+                    <div className="rounded-3xl border border-gray-200 bg-gray-50 p-4 text-center text-sm font-semibold text-gray-700">
+                        {campeon ?? 'Pendiente de resultados'}
+                    </div>
+                </div>
             </div>
         </section>
     );
@@ -414,6 +471,11 @@ function ResultadoModal({ partido, onClose }: { partido: Partido; onClose: () =>
                 <p className="mt-2 text-sm text-gray-500">
                     {partido.equipo_local?.nombre_equipo ?? 'Local'} vs {partido.equipo_visitante?.nombre_equipo ?? 'Visitante'}
                 </p>
+                {(errors as Record<string, string>).resultado && (
+                    <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+                        {(errors as Record<string, string>).resultado}
+                    </p>
+                )}
 
                 <div className="mt-6 grid grid-cols-2 gap-4">
                     <div>
@@ -504,14 +566,48 @@ function InfoBox({ label, value }: { label: string; value: string }) {
     );
 }
 
-function BracketColumn({ title, items }: { title: string; items: string[] }) {
+function BracketColumn({
+    title,
+    emptyText,
+    partidos,
+    canManage,
+    onEdit,
+}: {
+    title: string;
+    emptyText: string;
+    partidos: Partido[];
+    canManage: boolean;
+    onEdit: (partido: Partido) => void;
+}) {
     return (
         <div>
             <p className="mb-3 text-center text-sm font-bold uppercase text-gray-500">{title}</p>
             <div className="space-y-3">
-                {items.map((item) => (
-                    <div key={item} className="rounded-3xl border border-gray-200 bg-gray-50 p-4 text-center text-sm font-semibold text-gray-700">
-                        {item}
+                {partidos.length === 0 ? (
+                    <div className="rounded-3xl border border-gray-200 bg-gray-50 p-4 text-center text-sm font-semibold text-gray-700">
+                        {emptyText}
+                    </div>
+                ) : partidos.map((partido) => (
+                    <div key={partido.id} className="rounded-3xl border border-gray-200 bg-gray-50 p-4 text-center text-sm font-semibold text-gray-700">
+                        <p>{partido.equipo_local?.nombre_equipo ?? 'Pendiente'}</p>
+                        <p className="my-2 rounded-2xl bg-white px-3 py-2 text-gray-900">
+                            {partido.marcador_partido ?? 'vs'}
+                        </p>
+                        <p>{partido.equipo_visitante?.nombre_equipo ?? 'Pendiente'}</p>
+                        {partido.estado_partido === 'jugado' ? (
+                            <span className="mt-4 inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                                Resultado cargado
+                            </span>
+                        ) : canManage ? (
+                            <button
+                                type="button"
+                                onClick={() => onEdit(partido)}
+                                className="btn-secondary mt-4 py-2"
+                            >
+                                <Pencil className="h-4 w-4" />
+                                Cargar resultado
+                            </button>
+                        ) : null}
                     </div>
                 ))}
             </div>

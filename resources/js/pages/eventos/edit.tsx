@@ -137,12 +137,14 @@ export default function Edit({ evento }: Props) {
                             label="Formato"
                             error={errors.formato_evento}
                             input={
-                                <input
-                                    type="text"
+                                <select
                                     value={data.formato_evento}
                                     onChange={(e) => setData('formato_evento', e.target.value)}
-                                    className="app-input mt-2 w-full"
-                                />
+                                    className="app-select mt-2 w-full"
+                                >
+                                    <option value="futbol_5">Fútbol 5</option>
+                                    <option value="futbol_7">Fútbol 7</option>
+                                </select>
                             }
                         />
 

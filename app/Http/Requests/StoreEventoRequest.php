@@ -45,8 +45,7 @@ class StoreEventoRequest extends FormRequest
 
             'formato_evento' => [
                 'required',
-                'string',
-                'max:255',
+                'in:futbol_5,futbol_7',
             ],
 
             'tipo_inscripcion' => [

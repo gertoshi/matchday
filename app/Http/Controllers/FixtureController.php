@@ -174,9 +174,15 @@ class FixtureController extends Controller
 
         $this->autorizarGestionEvento($partido->evento);
 
+        if ($partido->estado_partido === 'jugado') {
+            return back()->withErrors([
+                'resultado' => 'El resultado de este partido ya fue cargado y no puede modificarse.',
+            ]);
+        }
+
         $datos = $request->validate([
-            'goles_local' => ['required', 'integer', 'min:0', 'max:99'],
-            'goles_visitante' => ['required', 'integer', 'min:0', 'max:99'],
+            'goles_local' => ['required', 'integer', 'min:0'],
+            'goles_visitante' => ['required', 'integer', 'min:0'],
         ]);
 
         abort_if(
@@ -202,6 +208,13 @@ class FixtureController extends Controller
 
             if ($partido->grupo_id) {
                 $this->recalcularTablaGrupo((int) $partido->grupo_id);
+                $this->generarEliminatoriasSiCorresponde($partido->evento);
+
+                return;
+            }
+
+            if ($partido->fase === 'semifinal') {
+                $this->generarFinalSiCorresponde($partido->evento);
             }
         });
 
@@ -266,10 +279,14 @@ class FixtureController extends Controller
         FixtureGrupoEquipo::query()
             ->where('fixture_grupo_id', $grupoId)
             ->get()
-            ->sortByDesc(fn (FixtureGrupoEquipo $equipo) => [
-                $equipo->puntos,
-                $equipo->diferencia_goles,
-                $equipo->goles_favor,
+            ->sort(fn (FixtureGrupoEquipo $a, FixtureGrupoEquipo $b): int => [
+                $b->puntos,
+                $b->diferencia_goles,
+                $b->goles_favor,
+            ] <=> [
+                $a->puntos,
+                $a->diferencia_goles,
+                $a->goles_favor,
             ])
             ->values()
             ->each(fn (FixtureGrupoEquipo $equipo, int $index) => $equipo->update([
@@ -299,6 +316,171 @@ class FixtureController extends Controller
         }
 
         $equipo->increment('perdidos');
+    }
+
+    private function generarEliminatoriasSiCorresponde(Evento $evento): void
+    {
+        $partidosGrupoPendientes = $evento->partidos()
+            ->where('fase', 'grupo')
+            ->where('estado_partido', '!=', 'jugado')
+            ->count();
+
+        if ($partidosGrupoPendientes > 0) {
+            return;
+        }
+
+        if ((int) $evento->cupo_evento === 4) {
+            $this->crearFinalDirectaSiCorresponde($evento);
+
+            return;
+        }
+
+        if ((int) $evento->cupo_evento === 8) {
+            $this->crearSemifinalesSiCorresponde($evento);
+        }
+    }
+
+    private function crearSemifinalesSiCorresponde(Evento $evento): void
+    {
+        if ($evento->partidos()->where('fase', 'semifinal')->exists()) {
+            return;
+        }
+
+        $grupos = $this->gruposOrdenadosConTabla($evento);
+        $grupoA = $grupos->firstWhere('nombre_grupo', 'Grupo A');
+        $grupoB = $grupos->firstWhere('nombre_grupo', 'Grupo B');
+
+        if (! $grupoA || ! $grupoB) {
+            return;
+        }
+
+        $tablaA = $grupoA->equiposGrupo->sortBy('posicion')->values();
+        $tablaB = $grupoB->equiposGrupo->sortBy('posicion')->values();
+
+        if ($tablaA->count() < 2 || $tablaB->count() < 2) {
+            return;
+        }
+
+        $this->crearPartidoEliminatorio(
+            $evento,
+            'semifinal',
+            (int) $tablaA[0]->equipo_id,
+            (int) $tablaB[1]->equipo_id,
+        );
+
+        $this->crearPartidoEliminatorio(
+            $evento,
+            'semifinal',
+            (int) $tablaB[0]->equipo_id,
+            (int) $tablaA[1]->equipo_id,
+        );
+    }
+
+    private function crearFinalDirectaSiCorresponde(Evento $evento): void
+    {
+        if ($evento->partidos()->where('fase', 'final')->exists()) {
+            return;
+        }
+
+        $grupos = $this->gruposOrdenadosConTabla($evento);
+        $grupoA = $grupos->firstWhere('nombre_grupo', 'Grupo A');
+        $grupoB = $grupos->firstWhere('nombre_grupo', 'Grupo B');
+
+        if (! $grupoA || ! $grupoB) {
+            return;
+        }
+
+        $primeroA = $grupoA->equiposGrupo->sortBy('posicion')->first();
+        $primeroB = $grupoB->equiposGrupo->sortBy('posicion')->first();
+
+        if (! $primeroA || ! $primeroB) {
+            return;
+        }
+
+        $this->crearPartidoEliminatorio(
+            $evento,
+            'final',
+            (int) $primeroA->equipo_id,
+            (int) $primeroB->equipo_id,
+        );
+    }
+
+    private function generarFinalSiCorresponde(Evento $evento): void
+    {
+        if ($evento->partidos()->where('fase', 'final')->exists()) {
+            return;
+        }
+
+        $semifinales = $evento->partidos()
+            ->where('fase', 'semifinal')
+            ->where('estado_partido', 'jugado')
+            ->orderBy('id')
+            ->get();
+
+        if ($semifinales->count() !== 2) {
+            return;
+        }
+
+        $finalistas = $semifinales
+            ->map(fn (Partido $partido): ?int => $this->ganadorEquipoId($partido))
+            ->filter()
+            ->values();
+
+        if ($finalistas->count() !== 2) {
+            return;
+        }
+
+        $this->crearPartidoEliminatorio(
+            $evento,
+            'final',
+            (int) $finalistas[0],
+            (int) $finalistas[1],
+        );
+    }
+
+    private function crearPartidoEliminatorio(Evento $evento, string $fase, int $equipoLocalId, int $equipoVisitanteId): void
+    {
+        Partido::create([
+            'evento_id' => $evento->id,
+            'grupo_id' => null,
+            'equipo_local_id' => $equipoLocalId,
+            'equipo_visitante_id' => $equipoVisitanteId,
+            'fecha_hora' => $evento->fecha_inicio?->copy()->addDay()->setTime(16, 0) ?? now(),
+            'ubicacion_partido' => $evento->ubicacion_evento,
+            'categoria_partido' => 'Infantil',
+            'fase' => $fase,
+            'estado_partido' => 'pendiente',
+            'marcador_partido' => null,
+            'ganador_partido' => null,
+        ]);
+    }
+
+    private function ganadorEquipoId(Partido $partido): ?int
+    {
+        if ($partido->goles_local === null || $partido->goles_visitante === null) {
+            return null;
+        }
+
+        if ($partido->goles_local > $partido->goles_visitante) {
+            return $partido->equipo_local_id;
+        }
+
+        if ($partido->goles_visitante > $partido->goles_local) {
+            return $partido->equipo_visitante_id;
+        }
+
+        return null;
+    }
+
+    /**
+     * @return Collection<int, FixtureGrupo>
+     */
+    private function gruposOrdenadosConTabla(Evento $evento): Collection
+    {
+        return $evento->fixtureGrupos()
+            ->with('equiposGrupo')
+            ->orderBy('nombre_grupo')
+            ->get();
     }
 
     private function inscripcionesActuales(Evento $evento): int

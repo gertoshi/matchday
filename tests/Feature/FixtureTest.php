@@ -108,6 +108,106 @@ test('organizer can update result and group standings are recalculated', functio
         ->and($visitante->perdidos)->toBe(1);
 });
 
+test('played result cannot be updated again', function () {
+    $organizer = User::factory()->create();
+    $evento = createEvento($organizer, 4);
+    createInscripciones($evento, 4);
+
+    $this->actingAs($organizer)
+        ->post(route('eventos.fixture.generar', $evento));
+
+    $partido = Partido::query()
+        ->where('evento_id', $evento->id)
+        ->firstOrFail();
+
+    $this->actingAs($organizer)
+        ->put(route('partidos.resultado.update', $partido), [
+            'goles_local' => 2,
+            'goles_visitante' => 1,
+        ]);
+
+    $this->actingAs($organizer)
+        ->from(route('eventos.fixture.show', $evento))
+        ->put(route('partidos.resultado.update', $partido), [
+            'goles_local' => 3,
+            'goles_visitante' => 0,
+        ])
+        ->assertSessionHasErrors([
+            'resultado' => 'El resultado de este partido ya fue cargado y no puede modificarse.',
+        ]);
+
+    expect($partido->fresh()->marcador_partido)->toBe('2 - 1');
+});
+
+test('direct final is generated when all group results are loaded for four team tournament', function () {
+    $organizer = User::factory()->create();
+    $evento = createEvento($organizer, 4);
+    createInscripciones($evento, 4);
+
+    $this->actingAs($organizer)
+        ->post(route('eventos.fixture.generar', $evento));
+
+    Partido::query()
+        ->where('evento_id', $evento->id)
+        ->where('fase', 'grupo')
+        ->get()
+        ->each(function (Partido $partido) use ($organizer): void {
+            $this->actingAs($organizer)
+                ->put(route('partidos.resultado.update', $partido), [
+                    'goles_local' => 1,
+                    'goles_visitante' => 0,
+                ]);
+        });
+
+    $final = Partido::query()
+        ->where('evento_id', $evento->id)
+        ->where('fase', 'final')
+        ->first();
+
+    expect($final)->not->toBeNull()
+        ->and(Partido::where('evento_id', $evento->id)->where('fase', 'semifinal')->count())->toBe(0)
+        ->and($final?->grupo_id)->toBeNull()
+        ->and($final?->estado_partido)->toBe('pendiente');
+});
+
+test('semifinals and final are generated for eight team tournament', function () {
+    $organizer = User::factory()->create();
+    $evento = createEvento($organizer, 8);
+    createInscripciones($evento, 8);
+
+    $this->actingAs($organizer)
+        ->post(route('eventos.fixture.generar', $evento));
+
+    Partido::query()
+        ->where('evento_id', $evento->id)
+        ->where('fase', 'grupo')
+        ->get()
+        ->each(function (Partido $partido) use ($organizer): void {
+            $this->actingAs($organizer)
+                ->put(route('partidos.resultado.update', $partido), [
+                    'goles_local' => 1,
+                    'goles_visitante' => 0,
+                ]);
+        });
+
+    expect(Partido::where('evento_id', $evento->id)->where('fase', 'semifinal')->count())->toBe(2)
+        ->and(Partido::where('evento_id', $evento->id)->where('fase', 'final')->count())->toBe(0);
+
+    Partido::query()
+        ->where('evento_id', $evento->id)
+        ->where('fase', 'semifinal')
+        ->get()
+        ->each(function (Partido $partido) use ($organizer): void {
+            $this->actingAs($organizer)
+                ->put(route('partidos.resultado.update', $partido), [
+                    'goles_local' => 2,
+                    'goles_visitante' => 1,
+                ]);
+        });
+
+    expect(Partido::where('evento_id', $evento->id)->where('fase', 'final')->count())->toBe(1);
+});
+
 test('normal users cannot update results', function () {
     $organizer = User::factory()->create();
     $user = User::factory()->create();
@@ -142,7 +242,7 @@ function createEvento(User $organizer, int $cupo): Evento
         'fecha_inicio' => now()->addDay()->toDateString(),
         'fecha_fin' => now()->addWeek()->toDateString(),
         'descripcion_evento' => null,
-        'formato_evento' => 'Fútbol 5',
+        'formato_evento' => 'futbol_5',
     ]);
 }
 

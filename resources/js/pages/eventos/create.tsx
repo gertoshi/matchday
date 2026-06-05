@@ -8,7 +8,7 @@ export default function Create() {
         cupo_evento: 4,
         fecha_inicio: '',
         fecha_fin: '',
-        formato_evento: '',
+        formato_evento: 'futbol_5',
         tipo_inscripcion: 'gratis',
         monto_inscripcion: '',
         descripcion_evento: '',
@@ -103,13 +103,14 @@ export default function Create() {
                             label="Formato"
                             error={errors.formato_evento}
                             input={
-                                <input
-                                    type="text"
+                                <select
                                     value={data.formato_evento}
                                     onChange={(e) => setData('formato_evento', e.target.value)}
-                                    className="app-input mt-2 w-full"
-                                    placeholder="Ej: Fútbol 5, todos contra todos"
-                                />
+                                    className="app-select mt-2 w-full"
+                                >
+                                    <option value="futbol_5">Fútbol 5</option>
+                                    <option value="futbol_7">Fútbol 7</option>
+                                </select>
                             }
                         />
 

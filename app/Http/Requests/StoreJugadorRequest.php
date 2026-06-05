@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreJugadorRequest extends FormRequest
 {
@@ -43,12 +44,24 @@ class StoreJugadorRequest extends FormRequest
                 'required',
                 'integer',
                 'min:1',
-                'max:99',
+                'max:10',
+                Rule::unique('jugadores', 'numero_jugador')
+                    ->where('equipo_id', $this->user()?->equipo?->id),
             ],
             'sexo_jugador' => [
                 'required',
                 'in:masculino,femenino',
             ],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'numero_jugador.unique' => 'Ese número de camiseta ya está asignado a otro jugador.',
         ];
     }
 }

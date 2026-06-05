@@ -120,7 +120,7 @@ export default function Index({ eventos }: Props) {
                                 <div className="mt-6 grid gap-4 md:grid-cols-2">
                                     <InfoRow label="Inicio" value={evento.fecha_inicio} />
                                     <InfoRow label="Fin" value={evento.fecha_fin} />
-                                    <InfoRow label="Formato" value={evento.formato_evento} />
+                                    <InfoRow label="Formato" value={formatoLabel(evento.formato_evento)} />
                                     <InfoRow
                                         label="Inscripción"
                                         value={inscripcionLabel(evento.tipo_inscripcion, evento.monto_inscripcion)}
@@ -215,6 +215,15 @@ function InscripcionBadge({
 
 function inscripcionLabel(tipo: Evento['tipo_inscripcion'], monto?: string | null) {
     return tipo === 'pago' ? `${formatMoney(monto)} por equipo` : 'Gratis';
+}
+
+function formatoLabel(formato: string) {
+    const formatos: Record<string, string> = {
+        futbol_5: 'Fútbol 5',
+        futbol_7: 'Fútbol 7',
+    };
+
+    return formatos[formato] ?? formato;
 }
 
 function formatMoney(value?: string | null) {

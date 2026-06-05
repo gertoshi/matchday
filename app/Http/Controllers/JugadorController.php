@@ -56,6 +56,10 @@ class JugadorController extends Controller
                 'id' => $equipo->id,
                 'nombre_equipo' => $equipo->nombre_equipo,
             ],
+            'numerosOcupados' => $equipo->jugadores()
+                ->pluck('numero_jugador')
+                ->map(fn (int $numero): int => $numero)
+                ->values(),
         ]);
     }
 
@@ -97,6 +101,12 @@ class JugadorController extends Controller
 
         return inertia('jugadores/edit', [
             'jugador' => $jugador,
+            'numerosOcupados' => $jugador->equipo
+                ->jugadores()
+                ->whereKeyNot($jugador->id)
+                ->pluck('numero_jugador')
+                ->map(fn (int $numero): int => $numero)
+                ->values(),
         ]);
     }
 
