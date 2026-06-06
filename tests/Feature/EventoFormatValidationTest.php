@@ -35,7 +35,7 @@ function eventoPayload(array $overrides = []): array
     return [
         'nombre_evento' => 'Torneo Relampago',
         'ubicacion_evento' => 'Cancha Central',
-        'cupo_evento' => 4,
+        'cupo_evento' => 8,
         'fecha_inicio' => now()->addDay()->toDateString(),
         'fecha_fin' => now()->addDays(2)->toDateString(),
         'formato_evento' => 'futbol_5',

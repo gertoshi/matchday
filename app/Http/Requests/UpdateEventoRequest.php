@@ -29,7 +29,7 @@ class UpdateEventoRequest extends FormRequest
             'cupo_evento' => [
                 'required',
                 'integer',
-                'in:4,8',
+                'in:8,16',
             ],
 
             'fecha_inicio' => [

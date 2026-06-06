@@ -87,8 +87,8 @@ export default function Edit({ evento }: Props) {
                                         onChange={(e) => setData('cupo_evento', Number(e.target.value))}
                                         className="app-select mt-2 w-full"
                                     >
-                                        <option value={4}>4 equipos (2 grupos de 2)</option>
                                         <option value={8}>8 equipos (2 grupos de 4)</option>
+                                        <option value={16}>16 equipos (4 grupos de 4)</option>
                                     </select>
                                 }
                             />

@@ -6,6 +6,7 @@ use App\Http\Requests\StorePerfilUsuarioRequest;
 use App\Http\Requests\UpdatePerfilUsuarioRequest;
 use App\Models\PerfilUsuario;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Response;
 
 class PerfilUsuarioController extends Controller
@@ -35,6 +36,10 @@ class PerfilUsuarioController extends Controller
         $datos = $request->validated();
 
         if ($request->hasFile('foto_perfil')) {
+            if ($perfil->foto_perfil) {
+                Storage::disk('public')->delete($perfil->foto_perfil);
+            }
+
             $datos['foto_perfil'] = $request
                 ->file('foto_perfil')
                 ->store('perfiles', 'public');

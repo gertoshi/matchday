@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import AppShell from '@/components/layout/AppShell';
+import { storageUrl } from '@/lib/storage';
 
 type Perfil = {
     nombre: string;
@@ -36,7 +37,7 @@ export default function Edit({ perfil }: Props) {
                     <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
                         {perfil.foto_perfil ? (
                             <img
-                                src={`/storage/${perfil.foto_perfil}`}
+                                src={storageUrl(perfil.foto_perfil) ?? ''}
                                 alt={`${perfil.nombre} ${perfil.apellido}`}
                                 className="h-24 w-24 rounded-3xl object-cover"
                             />

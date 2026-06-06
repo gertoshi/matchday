@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import AppShell from '@/components/layout/AppShell';
+import { storageUrl } from '@/lib/storage';
 
 type Equipo = {
     id: number;
@@ -85,7 +86,7 @@ export default function Edit({ equipo }: Props) {
                         <div className="space-y-3">
                             {equipo.escudo_equipo && (
                                 <img
-                                    src={`/storage/${equipo.escudo_equipo}`}
+                                    src={storageUrl(equipo.escudo_equipo) ?? ''}
                                     alt={equipo.nombre_equipo}
                                     className="h-24 w-24 rounded-2xl object-cover"
                                 />

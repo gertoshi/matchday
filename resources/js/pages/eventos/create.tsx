@@ -5,7 +5,7 @@ export default function Create() {
     const { data, setData, post, processing, errors } = useForm({
         nombre_evento: '',
         ubicacion_evento: '',
-        cupo_evento: 4,
+        cupo_evento: 8,
         fecha_inicio: '',
         fecha_fin: '',
         formato_evento: 'futbol_5',
@@ -68,8 +68,8 @@ export default function Create() {
                                         onChange={(e) => setData('cupo_evento', Number(e.target.value))}
                                         className="app-select mt-2 w-full"
                                     >
-                                        <option value={4}>4 equipos (2 grupos de 2)</option>
                                         <option value={8}>8 equipos (2 grupos de 4)</option>
+                                        <option value={16}>16 equipos (4 grupos de 4)</option>
                                     </select>
                                 }
                             />

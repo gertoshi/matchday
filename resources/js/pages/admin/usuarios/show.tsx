@@ -1,5 +1,6 @@
 import AdminShell from '@/components/admin/AdminShell';
 import ModalSancion from '@/components/admin/ModalSancion';
+import { storageUrl } from '@/lib/storage';
 import { Head, Link, router } from '@inertiajs/react';
 import { ShieldBan, Undo2 } from 'lucide-react';
 import { useState } from 'react';
@@ -152,7 +153,7 @@ function Avatar({ usuario }: { usuario: Usuario }) {
 
     return (
         <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-emerald-100 text-3xl font-bold text-emerald-700">
-            {foto ? <img src={`/storage/${foto}`} alt={usuario.name} className="h-full w-full object-cover" /> : usuario.name.charAt(0)}
+            {foto ? <img src={storageUrl(foto) ?? ''} alt={usuario.name} className="h-full w-full object-cover" /> : usuario.name.charAt(0)}
         </div>
     );
 }

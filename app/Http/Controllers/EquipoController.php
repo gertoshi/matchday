@@ -1,11 +1,13 @@
 <?php
 
 // Namespace: ubicación del controlador
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreEquipoRequest;
 use App\Http\Requests\UpdateEquipoRequest;
 use App\Models\Equipo;
+use Illuminate\Support\Facades\Storage;
 
 class EquipoController extends Controller
 {
@@ -18,14 +20,14 @@ class EquipoController extends Controller
         // auth()->id() devuelve el id del usuario logueado
 
         $equipos = Equipo::where('user_id', auth()->id())
-                        ->with('jugadores')
-                        ->latest() // ordena por created_at descendente
-                        ->get();   // ejecuta la consulta
+            ->with('jugadores')
+            ->latest() // ordena por created_at descendente
+            ->get();   // ejecuta la consulta
 
         // Enviamos los equipos a la vista React con Inertia
 
         return inertia('equipos/index', [
-            'equipos' => $equipos
+            'equipos' => $equipos,
         ]);
     }
 
@@ -47,6 +49,10 @@ class EquipoController extends Controller
         $datos = $request->validated();
 
         if ($request->hasFile('escudo_equipo')) {
+            if ($equipo->escudo_equipo) {
+                Storage::disk('public')->delete($equipo->escudo_equipo);
+            }
+
             $datos['escudo_equipo'] = $request
                 ->file('escudo_equipo')
                 ->store('escudos', 'public');
@@ -80,7 +86,7 @@ class EquipoController extends Controller
     public function edit(Equipo $equipo)
     {
         return inertia('equipos/edit', [
-            'equipo' => $equipo
+            'equipo' => $equipo,
         ]);
     }
 

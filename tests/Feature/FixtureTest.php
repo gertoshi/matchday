@@ -13,22 +13,22 @@ uses(RefreshDatabase::class);
 
 test('organizer can generate fixture when tournament is full', function () {
     $organizer = User::factory()->create();
-    $evento = createEvento($organizer, 4);
-    createInscripciones($evento, 4);
+    $evento = createEvento($organizer, 8);
+    createInscripciones($evento, 8);
 
     $this->actingAs($organizer)
         ->post(route('eventos.fixture.generar', $evento))
         ->assertRedirect(route('eventos.fixture.show', $evento));
 
     expect(FixtureGrupo::where('evento_id', $evento->id)->count())->toBe(2)
-        ->and(FixtureGrupoEquipo::count())->toBe(4)
-        ->and(Partido::where('evento_id', $evento->id)->where('fase', 'grupo')->count())->toBe(2);
+        ->and(FixtureGrupoEquipo::count())->toBe(8)
+        ->and(Partido::where('evento_id', $evento->id)->where('fase', 'grupo')->count())->toBe(12);
 });
 
 test('fixture cannot be generated before cup is full', function () {
     $organizer = User::factory()->create();
-    $evento = createEvento($organizer, 4);
-    createInscripciones($evento, 3);
+    $evento = createEvento($organizer, 8);
+    createInscripciones($evento, 7);
 
     $this->actingAs($organizer)
         ->from(route('eventos.fixture.show', $evento))
@@ -42,8 +42,8 @@ test('fixture cannot be generated before cup is full', function () {
 test('normal users cannot generate fixture for another tournament', function () {
     $organizer = User::factory()->create();
     $user = User::factory()->create();
-    $evento = createEvento($organizer, 4);
-    createInscripciones($evento, 4);
+    $evento = createEvento($organizer, 8);
+    createInscripciones($evento, 8);
 
     $this->actingAs($user)
         ->post(route('eventos.fixture.generar', $evento))
@@ -54,8 +54,8 @@ test('normal users cannot generate fixture for another tournament', function () 
 
 test('fixture is not generated twice', function () {
     $organizer = User::factory()->create();
-    $evento = createEvento($organizer, 4);
-    createInscripciones($evento, 4);
+    $evento = createEvento($organizer, 8);
+    createInscripciones($evento, 8);
 
     $this->actingAs($organizer)
         ->post(route('eventos.fixture.generar', $evento));
@@ -65,13 +65,13 @@ test('fixture is not generated twice', function () {
         ->assertRedirect(route('eventos.fixture.show', $evento));
 
     expect(FixtureGrupo::where('evento_id', $evento->id)->count())->toBe(2)
-        ->and(Partido::where('evento_id', $evento->id)->count())->toBe(2);
+        ->and(Partido::where('evento_id', $evento->id)->count())->toBe(12);
 });
 
 test('organizer can update result and group standings are recalculated', function () {
     $organizer = User::factory()->create();
-    $evento = createEvento($organizer, 4);
-    createInscripciones($evento, 4);
+    $evento = createEvento($organizer, 8);
+    createInscripciones($evento, 8);
 
     $this->actingAs($organizer)
         ->post(route('eventos.fixture.generar', $evento));
@@ -110,8 +110,8 @@ test('organizer can update result and group standings are recalculated', functio
 
 test('played result cannot be updated again', function () {
     $organizer = User::factory()->create();
-    $evento = createEvento($organizer, 4);
-    createInscripciones($evento, 4);
+    $evento = createEvento($organizer, 8);
+    createInscripciones($evento, 8);
 
     $this->actingAs($organizer)
         ->post(route('eventos.fixture.generar', $evento));
@@ -139,37 +139,6 @@ test('played result cannot be updated again', function () {
     expect($partido->fresh()->marcador_partido)->toBe('2 - 1');
 });
 
-test('direct final is generated when all group results are loaded for four team tournament', function () {
-    $organizer = User::factory()->create();
-    $evento = createEvento($organizer, 4);
-    createInscripciones($evento, 4);
-
-    $this->actingAs($organizer)
-        ->post(route('eventos.fixture.generar', $evento));
-
-    Partido::query()
-        ->where('evento_id', $evento->id)
-        ->where('fase', 'grupo')
-        ->get()
-        ->each(function (Partido $partido) use ($organizer): void {
-            $this->actingAs($organizer)
-                ->put(route('partidos.resultado.update', $partido), [
-                    'goles_local' => 1,
-                    'goles_visitante' => 0,
-                ]);
-        });
-
-    $final = Partido::query()
-        ->where('evento_id', $evento->id)
-        ->where('fase', 'final')
-        ->first();
-
-    expect($final)->not->toBeNull()
-        ->and(Partido::where('evento_id', $evento->id)->where('fase', 'semifinal')->count())->toBe(0)
-        ->and($final?->grupo_id)->toBeNull()
-        ->and($final?->estado_partido)->toBe('pendiente');
-});
-
 test('semifinals and final are generated for eight team tournament', function () {
     $organizer = User::factory()->create();
     $evento = createEvento($organizer, 8);
@@ -187,7 +156,8 @@ test('semifinals and final are generated for eight team tournament', function ()
                 ->put(route('partidos.resultado.update', $partido), [
                     'goles_local' => 1,
                     'goles_visitante' => 0,
-                ]);
+                ])
+                ->assertRedirect();
         });
 
     expect(Partido::where('evento_id', $evento->id)->where('fase', 'semifinal')->count())->toBe(2)
@@ -202,7 +172,8 @@ test('semifinals and final are generated for eight team tournament', function ()
                 ->put(route('partidos.resultado.update', $partido), [
                     'goles_local' => 2,
                     'goles_visitante' => 1,
-                ]);
+                ])
+                ->assertRedirect();
         });
 
     expect(Partido::where('evento_id', $evento->id)->where('fase', 'final')->count())->toBe(1);
@@ -211,8 +182,8 @@ test('semifinals and final are generated for eight team tournament', function ()
 test('normal users cannot update results', function () {
     $organizer = User::factory()->create();
     $user = User::factory()->create();
-    $evento = createEvento($organizer, 4);
-    createInscripciones($evento, 4);
+    $evento = createEvento($organizer, 8);
+    createInscripciones($evento, 8);
 
     $this->actingAs($organizer)
         ->post(route('eventos.fixture.generar', $evento));
@@ -234,8 +205,8 @@ test('normal users cannot update results', function () {
 test('admin can update results for any tournament', function () {
     $organizer = User::factory()->create();
     $admin = User::factory()->create(['is_admin' => true]);
-    $evento = createEvento($organizer, 4);
-    createInscripciones($evento, 4);
+    $evento = createEvento($organizer, 8);
+    createInscripciones($evento, 8);
 
     $this->actingAs($organizer)
         ->post(route('eventos.fixture.generar', $evento));
@@ -256,8 +227,8 @@ test('admin can update results for any tournament', function () {
 
 test('knockout results cannot be tied and final result determines champion', function () {
     $organizer = User::factory()->create();
-    $evento = createEvento($organizer, 4);
-    createInscripciones($evento, 4);
+    $evento = createEvento($organizer, 8);
+    createInscripciones($evento, 8);
 
     $this->actingAs($organizer)
         ->post(route('eventos.fixture.generar', $evento));
@@ -272,6 +243,19 @@ test('knockout results cannot be tied and final result determines champion', fun
                     'goles_local' => 1,
                     'goles_visitante' => 0,
                 ]);
+        });
+
+    Partido::query()
+        ->where('evento_id', $evento->id)
+        ->where('fase', 'semifinal')
+        ->get()
+        ->each(function (Partido $partido) use ($organizer): void {
+            $this->actingAs($organizer)
+                ->put(route('partidos.resultado.update', $partido), [
+                    'goles_local' => 2,
+                    'goles_visitante' => 1,
+                ])
+                ->assertRedirect();
         });
 
     $final = Partido::query()
@@ -301,6 +285,62 @@ test('knockout results cannot be tied and final result determines champion', fun
     expect($final->estado_partido)->toBe('jugado')
         ->and($final->marcador_partido)->toBe('3 - 2')
         ->and($final->ganador_partido)->toBe($final->equipoLocal->nombre_equipo);
+});
+
+test('quarterfinals semifinals and final are generated for sixteen team tournament', function () {
+    $organizer = User::factory()->create();
+    $evento = createEvento($organizer, 16);
+    createInscripciones($evento, 16);
+
+    $this->actingAs($organizer)
+        ->post(route('eventos.fixture.generar', $evento));
+
+    expect(FixtureGrupo::where('evento_id', $evento->id)->count())->toBe(4)
+        ->and(Partido::where('evento_id', $evento->id)->where('fase', 'grupo')->count())->toBe(24);
+
+    Partido::query()
+        ->where('evento_id', $evento->id)
+        ->where('fase', 'grupo')
+        ->get()
+        ->each(function (Partido $partido) use ($organizer): void {
+            $this->actingAs($organizer)
+                ->put(route('partidos.resultado.update', $partido), [
+                    'goles_local' => 1,
+                    'goles_visitante' => 0,
+                ])
+                ->assertRedirect();
+        });
+
+    expect(Partido::where('evento_id', $evento->id)->where('fase', 'cuartos')->count())->toBe(4)
+        ->and(Partido::where('evento_id', $evento->id)->where('fase', 'semifinal')->count())->toBe(0);
+
+    Partido::query()
+        ->where('evento_id', $evento->id)
+        ->where('fase', 'cuartos')
+        ->get()
+        ->each(function (Partido $partido) use ($organizer): void {
+            $this->actingAs($organizer)
+                ->put(route('partidos.resultado.update', $partido), [
+                    'goles_local' => 2,
+                    'goles_visitante' => 1,
+                ]);
+        });
+
+    expect(Partido::where('evento_id', $evento->id)->where('fase', 'semifinal')->count())->toBe(2);
+
+    Partido::query()
+        ->where('evento_id', $evento->id)
+        ->where('fase', 'semifinal')
+        ->get()
+        ->each(function (Partido $partido) use ($organizer): void {
+            $this->actingAs($organizer)
+                ->put(route('partidos.resultado.update', $partido), [
+                    'goles_local' => 2,
+                    'goles_visitante' => 1,
+                ]);
+        });
+
+    expect(Partido::where('evento_id', $evento->id)->where('fase', 'final')->count())->toBe(1);
 });
 
 function createEvento(User $organizer, int $cupo): Evento

@@ -1,5 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import AppShell from '@/components/layout/AppShell';
+import { storageUrl } from '@/lib/storage';
 
 type Perfil = {
     nombre: string;
@@ -83,7 +84,7 @@ export default function Show({ perfil }: Props) {
                                 <div className="flex items-center gap-4">
                                     {perfil.foto_perfil ? (
                                         <img
-                                            src={`/storage/${perfil.foto_perfil}`}
+                                            src={storageUrl(perfil.foto_perfil) ?? ''}
                                             alt={`${perfil.nombre} ${perfil.apellido}`}
                                             className="h-20 w-20 rounded-3xl object-cover"
                                         />

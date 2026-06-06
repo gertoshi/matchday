@@ -75,7 +75,7 @@ class EventoController extends Controller
 
         $user = auth()->user();
         $inscripcionesActuales = $evento->inscripciones
-            ->whereIn('estado_inscripcion', ['pendiente', 'confirmada'])
+            ->where('estado_inscripcion', 'confirmada')
             ->count();
         $canManage = $user !== null
             && ($evento->user_id === $user->id || (bool) $user->is_admin);
@@ -97,7 +97,7 @@ class EventoController extends Controller
                 'fixture_generado' => $evento->fixture_grupos_count > 0,
                 'can_generate_fixture' => $canManage
                     && $evento->fixture_grupos_count === 0
-                    && in_array((int) $evento->cupo_evento, [4, 8], true)
+                    && in_array((int) $evento->cupo_evento, [8, 16], true)
                     && $inscripcionesActuales === (int) $evento->cupo_evento,
                 'user' => $evento->user ? [
                     'id' => $evento->user->id,
@@ -109,6 +109,7 @@ class EventoController extends Controller
                     'equipo' => $inscripcion->equipo ? [
                         'id' => $inscripcion->equipo->id,
                         'nombre_equipo' => $inscripcion->equipo->nombre_equipo,
+                        'escudo_equipo' => $inscripcion->equipo->escudo_equipo,
                     ] : null,
                 ])->values(),
                 'partidos' => $evento->partidos->map(fn ($partido) => [

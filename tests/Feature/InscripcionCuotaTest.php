@@ -63,7 +63,7 @@ function createEventoCuota(User $organizer, string $tipoInscripcion, ?int $monto
         'user_id' => $organizer->id,
         'nombre_evento' => 'Torneo Cuota',
         'ubicacion_evento' => 'Cancha Central',
-        'cupo_evento' => 4,
+        'cupo_evento' => 8,
         'estado_evento' => 'abierto',
         'fecha_inicio' => now()->addDay()->toDateString(),
         'fecha_fin' => now()->addWeek()->toDateString(),

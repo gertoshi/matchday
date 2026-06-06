@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Equipo;
 use App\Models\Evento;
 use App\Models\FixtureGrupo;
 use App\Models\FixtureGrupoEquipo;
@@ -104,14 +105,8 @@ class FixtureController extends Controller
                         'id' => $partido->grupo->id,
                         'nombre_grupo' => $partido->grupo->nombre_grupo,
                     ] : null,
-                    'equipo_local' => $partido->equipoLocal ? [
-                        'id' => $partido->equipoLocal->id,
-                        'nombre_equipo' => $partido->equipoLocal->nombre_equipo,
-                    ] : null,
-                    'equipo_visitante' => $partido->equipoVisitante ? [
-                        'id' => $partido->equipoVisitante->id,
-                        'nombre_equipo' => $partido->equipoVisitante->nombre_equipo,
-                    ] : null,
+                    'equipo_local' => $this->equipoPayload($partido->equipoLocal),
+                    'equipo_visitante' => $this->equipoPayload($partido->equipoVisitante),
                     'marcador_partido' => $partido->marcador_partido,
                     'ganador_partido' => $partido->ganador_partido,
                     'goles_local' => $partido->goles_local,
@@ -144,7 +139,7 @@ class FixtureController extends Controller
 
             $equipos = $evento->inscripciones()
                 ->with('equipo')
-                ->whereIn('estado_inscripcion', ['pendiente', 'confirmada'])
+                ->where('estado_inscripcion', 'confirmada')
                 ->get()
                 ->pluck('equipo')
                 ->filter()
@@ -154,9 +149,12 @@ class FixtureController extends Controller
             abort_if($equipos->count() !== (int) $evento->cupo_evento, 422);
 
             $equiposMezclados = $equipos->shuffle();
-            $equiposPorGrupo = (int) ((int) $evento->cupo_evento / 2);
+            $equiposPorGrupo = 4;
+            $nombresGrupos = (int) $evento->cupo_evento === 16
+                ? ['Grupo A', 'Grupo B', 'Grupo C', 'Grupo D']
+                : ['Grupo A', 'Grupo B'];
 
-            collect(['Grupo A', 'Grupo B'])->each(function (string $nombreGrupo, int $index) use ($evento, $equiposMezclados, $equiposPorGrupo): void {
+            collect($nombresGrupos)->each(function (string $nombreGrupo, int $index) use ($evento, $equiposMezclados, $equiposPorGrupo): void {
                 $grupo = FixtureGrupo::create([
                     'evento_id' => $evento->id,
                     'nombre_grupo' => $nombreGrupo,
@@ -198,7 +196,7 @@ class FixtureController extends Controller
             'goles_visitante' => ['required', 'integer', 'min:0'],
         ]);
 
-        if (in_array($partido->fase, ['semifinal', 'final'], true) && $datos['goles_local'] === $datos['goles_visitante']) {
+        if (in_array($partido->fase, ['cuartos', 'semifinal', 'final'], true) && $datos['goles_local'] === $datos['goles_visitante']) {
             return back()->withErrors([
                 'resultado' => 'En eliminatorias debe haber un ganador.',
             ]);
@@ -230,6 +228,10 @@ class FixtureController extends Controller
                 $this->generarEliminatoriasSiCorresponde($partido->evento);
 
                 return;
+            }
+
+            if ($partido->fase === 'cuartos') {
+                $this->generarSemifinalesDesdeCuartosSiCorresponde($partido->evento);
             }
 
             if ($partido->fase === 'semifinal') {
@@ -348,14 +350,14 @@ class FixtureController extends Controller
             return;
         }
 
-        if ((int) $evento->cupo_evento === 4) {
-            $this->crearFinalDirectaSiCorresponde($evento);
+        if ((int) $evento->cupo_evento === 8) {
+            $this->crearSemifinalesSiCorresponde($evento);
 
             return;
         }
 
-        if ((int) $evento->cupo_evento === 8) {
-            $this->crearSemifinalesSiCorresponde($evento);
+        if ((int) $evento->cupo_evento === 16) {
+            $this->crearCuartosSiCorresponde($evento);
         }
     }
 
@@ -395,33 +397,70 @@ class FixtureController extends Controller
         );
     }
 
-    private function crearFinalDirectaSiCorresponde(Evento $evento): void
+    private function crearCuartosSiCorresponde(Evento $evento): void
     {
-        if ($evento->partidos()->where('fase', 'final')->exists()) {
+        if ($evento->partidos()->where('fase', 'cuartos')->exists()) {
             return;
         }
 
         $grupos = $this->gruposOrdenadosConTabla($evento);
-        $grupoA = $grupos->firstWhere('nombre_grupo', 'Grupo A');
-        $grupoB = $grupos->firstWhere('nombre_grupo', 'Grupo B');
+        $clasificados = $grupos
+            ->flatMap(fn (FixtureGrupo $grupo) => $grupo->equiposGrupo
+                ->sortBy('posicion')
+                ->take(2)
+                ->map(fn (FixtureGrupoEquipo $grupoEquipo) => [
+                    'equipo_id' => (int) $grupoEquipo->equipo_id,
+                    'grupo_id' => (int) $grupo->id,
+                ]))
+            ->values();
 
-        if (! $grupoA || ! $grupoB) {
+        if ($clasificados->count() !== 8) {
             return;
         }
 
-        $primeroA = $grupoA->equiposGrupo->sortBy('posicion')->first();
-        $primeroB = $grupoB->equiposGrupo->sortBy('posicion')->first();
+        $cruces = $this->crearCrucesCuartos($clasificados);
 
-        if (! $primeroA || ! $primeroB) {
+        if ($cruces->count() !== 4) {
             return;
         }
 
-        $this->crearPartidoEliminatorio(
-            $evento,
-            'final',
-            (int) $primeroA->equipo_id,
-            (int) $primeroB->equipo_id,
-        );
+        foreach ($cruces as $cruce) {
+            $this->crearPartidoEliminatorio(
+                $evento,
+                'cuartos',
+                $cruce[0]['equipo_id'],
+                $cruce[1]['equipo_id'],
+            );
+        }
+    }
+
+    private function generarSemifinalesDesdeCuartosSiCorresponde(Evento $evento): void
+    {
+        if ($evento->partidos()->where('fase', 'semifinal')->exists()) {
+            return;
+        }
+
+        $cuartos = $evento->partidos()
+            ->where('fase', 'cuartos')
+            ->where('estado_partido', 'jugado')
+            ->orderBy('id')
+            ->get();
+
+        if ($cuartos->count() !== 4) {
+            return;
+        }
+
+        $ganadores = $cuartos
+            ->map(fn (Partido $partido): ?int => $this->ganadorEquipoId($partido))
+            ->filter()
+            ->values();
+
+        if ($ganadores->count() !== 4) {
+            return;
+        }
+
+        $this->crearPartidoEliminatorio($evento, 'semifinal', (int) $ganadores[0], (int) $ganadores[1]);
+        $this->crearPartidoEliminatorio($evento, 'semifinal', (int) $ganadores[2], (int) $ganadores[3]);
     }
 
     private function generarFinalSiCorresponde(Evento $evento): void
@@ -501,6 +540,44 @@ class FixtureController extends Controller
     }
 
     /**
+     * @param  Collection<int, array{equipo_id: int, grupo_id: int}>  $clasificados
+     * @return Collection<int, array{0: array{equipo_id: int, grupo_id: int}, 1: array{equipo_id: int, grupo_id: int}}>
+     */
+    private function crearCrucesCuartos(Collection $clasificados): Collection
+    {
+        for ($intento = 0; $intento < 25; $intento++) {
+            $equipos = $clasificados->shuffle()->values();
+            $cruces = collect();
+            $cruceValido = true;
+
+            while ($equipos->isNotEmpty()) {
+                $local = $equipos->shift();
+                $indiceRival = $equipos->search(fn (array $rival): bool => $rival['grupo_id'] !== $local['grupo_id']);
+
+                if ($indiceRival === false) {
+                    $cruceValido = false;
+                    break;
+                }
+
+                $visitante = $equipos->pull($indiceRival);
+                $equipos = $equipos->values();
+                $cruces->push([$local, $visitante]);
+            }
+
+            if ($cruceValido && $cruces->count() === 4) {
+                return $cruces;
+            }
+        }
+
+        return $clasificados
+            ->shuffle()
+            ->values()
+            ->chunk(2)
+            ->map(fn (Collection $cruce) => $cruce->values()->all())
+            ->values();
+    }
+
+    /**
      * @return Collection<int, FixtureGrupo>
      */
     private function gruposOrdenadosConTabla(Evento $evento): Collection
@@ -514,14 +591,30 @@ class FixtureController extends Controller
     private function inscripcionesActuales(Evento $evento): int
     {
         return $evento->inscripciones()
-            ->whereIn('estado_inscripcion', ['pendiente', 'confirmada'])
+            ->where('estado_inscripcion', 'confirmada')
             ->count();
     }
 
     private function estaCompleto(Evento $evento, int $inscripcionesActuales): bool
     {
-        return in_array((int) $evento->cupo_evento, [4, 8], true)
+        return in_array((int) $evento->cupo_evento, [8, 16], true)
             && $inscripcionesActuales === (int) $evento->cupo_evento;
+    }
+
+    /**
+     * @return array{id: int, nombre_equipo: string, escudo_equipo: string|null}|null
+     */
+    private function equipoPayload(?Equipo $equipo): ?array
+    {
+        if (! $equipo) {
+            return null;
+        }
+
+        return [
+            'id' => $equipo->id,
+            'nombre_equipo' => $equipo->nombre_equipo,
+            'escudo_equipo' => $equipo->escudo_equipo,
+        ];
     }
 
     private function autorizarGestionEvento(Evento $evento): void

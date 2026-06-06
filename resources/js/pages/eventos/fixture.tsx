@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppShell from '@/components/layout/AppShell';
+import TeamBadge, { type TeamBadgeEquipo } from '@/components/equipos/TeamBadge';
 import {
     CalendarDays,
     Medal,
@@ -64,7 +65,7 @@ type Grupo = {
 
 type Partido = {
     id: number;
-    fase: 'grupo' | 'semifinal' | 'final';
+    fase: 'grupo' | 'cuartos' | 'semifinal' | 'final';
     grupo: {
         id: number;
         nombre_grupo: string;
@@ -449,20 +450,16 @@ function PartidosTab({
 
                         <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                             <TeamName
-                                name={
-                                    partido.equipo_local?.nombre_equipo ??
-                                    'Pendiente'
-                                }
+                                equipo={partido.equipo_local}
+                                placeholder="Pendiente"
                                 align="right"
                             />
                             <div className="rounded-2xl bg-gray-100 px-4 py-2 text-center text-sm font-bold text-gray-700">
                                 {partido.marcador_partido ?? 'vs'}
                             </div>
                             <TeamName
-                                name={
-                                    partido.equipo_visitante?.nombre_equipo ??
-                                    'Pendiente'
-                                }
+                                equipo={partido.equipo_visitante}
+                                placeholder="Pendiente"
                                 align="left"
                             />
                         </div>
@@ -540,9 +537,8 @@ function TablaTab({ grupos }: { grupos: Grupo[] }) {
                                 <tbody>
                                     {grupo.equipos.map((grupoEquipo) => (
                                         <tr key={grupoEquipo.id}>
-                                            <td className="px-5 py-4 font-semibold text-gray-900">
-                                                {grupoEquipo.equipo
-                                                    ?.nombre_equipo ?? 'Equipo'}
+                                            <td className="px-5 py-4">
+                                                <TeamBadge equipo={grupoEquipo.equipo} size="sm" />
                                             </td>
                                             <td className="px-5 py-4">
                                                 {grupoEquipo.partidos_jugados}
@@ -596,6 +592,7 @@ function Eliminatorias({
     const semifinales = partidos.filter(
         (partido) => partido.fase === 'semifinal',
     );
+    const cuartos = partidos.filter((partido) => partido.fase === 'cuartos');
     const finales = partidos.filter((partido) => partido.fase === 'final');
     const final = finales[0] ?? null;
     const campeon =
@@ -610,12 +607,29 @@ function Eliminatorias({
     const tablaB =
         grupos.find((grupo) => grupo.nombre_grupo === 'Grupo B')?.equipos ?? [];
     const equipo = (
-        grupoEquipo: GrupoEquipo | undefined,
+        grupoEquipo: GrupoEquipo | null | undefined,
         placeholder: string,
     ): string =>
         gruposCompletos && grupoEquipo?.equipo?.nombre_equipo
             ? grupoEquipo.equipo.nombre_equipo
             : placeholder;
+    const cuartoCards =
+        cupo === 16
+            ? [0, 1, 2, 3].map((index) =>
+                  cuartos[index]
+                      ? matchFromPartido(
+                            `Cuarto ${index + 1}`,
+                            'Cruce aleatorio',
+                            cuartos[index],
+                        )
+                      : matchFromPlaceholder(
+                            `Cuarto ${index + 1}`,
+                            'Cruce aleatorio',
+                            equipo(null, 'Clasificado'),
+                            equipo(null, 'Clasificado'),
+                        ),
+              )
+            : [];
     const semifinalCards =
         cupo === 8
             ? [
@@ -644,29 +658,33 @@ function Eliminatorias({
                             equipo(tablaB[0], '1° Grupo B'),
                         ),
               ]
-            : [];
+            : [0, 1].map((index) =>
+                  semifinales[index]
+                      ? matchFromPartido(
+                            `Semifinal ${index + 1}`,
+                            'Ganadores de cuartos',
+                            semifinales[index],
+                        )
+                      : matchFromPlaceholder(
+                            `Semifinal ${index + 1}`,
+                            'Ganadores de cuartos',
+                            `Ganador Cuarto ${index * 2 + 1}`,
+                            `Ganador Cuarto ${index * 2 + 2}`,
+                        ),
+              );
     const finalCards = [
         final
             ? matchFromPartido(
                   'Final',
-                  cupo === 4
-                      ? '1° Grupo A vs 1° Grupo B'
-                      : 'Ganadores de semifinales',
+                  'Ganadores de semifinales',
                   final,
               )
-            : cupo === 4
-              ? matchFromPlaceholder(
-                    'Final',
-                    '1° Grupo A vs 1° Grupo B',
-                    equipo(tablaA[0], '1° Grupo A'),
-                    equipo(tablaB[0], '1° Grupo B'),
-                )
-              : matchFromPlaceholder(
-                    'Final',
-                    'Ganadores de semifinales',
-                    'Ganador Semifinal 1',
-                    'Ganador Semifinal 2',
-                ),
+            : matchFromPlaceholder(
+                  'Final',
+                  'Ganadores de semifinales',
+                  'Ganador Semifinal 1',
+                  'Ganador Semifinal 2',
+              ),
     ];
 
     return (
@@ -678,7 +696,9 @@ function Eliminatorias({
                 </div>
                 <span className="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
                     {gruposCompletos
-                        ? 'Cruces definidos por tabla'
+                        ? cupo === 16
+                            ? 'Cuartos aleatorios'
+                            : 'Cruces definidos por tabla'
                         : 'Pendiente de fase de grupos'}
                 </span>
             </div>
@@ -690,10 +710,19 @@ function Eliminatorias({
                 </p>
             )}
 
-            <div className="mt-6 grid gap-4 lg:grid-cols-3">
+            <div className={`mt-6 grid gap-4 ${cupo === 16 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+                {cupo === 16 ? (
+                    <BracketColumn
+                        title="Cuartos de final"
+                        emptyText="Pendiente de clasificados"
+                        matches={cuartoCards}
+                        canManage={canManage}
+                        onEdit={onEdit}
+                    />
+                ) : null}
                 <BracketColumn
                     title="Semifinales"
-                    emptyText="Final directa para torneos de 4 equipos"
+                    emptyText="Pendiente"
                     matches={semifinalCards}
                     canManage={canManage}
                     onEdit={onEdit}
@@ -844,21 +873,8 @@ function EquipoRow({ grupoEquipo }: { grupoEquipo: GrupoEquipo }) {
 
     return (
         <div className="flex items-center gap-4 rounded-3xl border border-gray-200 p-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-lg font-bold text-emerald-700">
-                {equipo?.escudo_equipo ? (
-                    <img
-                        src={`/storage/${equipo.escudo_equipo}`}
-                        alt={equipo.nombre_equipo}
-                        className="h-full w-full rounded-2xl object-cover"
-                    />
-                ) : (
-                    (equipo?.nombre_equipo.charAt(0) ?? '?')
-                )}
-            </div>
+            <TeamBadge equipo={equipo} />
             <div className="min-w-0">
-                <p className="truncate font-semibold text-gray-900">
-                    {equipo?.nombre_equipo ?? 'Equipo sin nombre'}
-                </p>
                 <p className="truncate text-sm text-gray-500">
                     Responsable: {equipo?.responsable ?? 'Sin responsable'}
                 </p>
@@ -935,11 +951,11 @@ function BracketColumn({
                             </div>
 
                             <div className="mt-5 space-y-3 text-sm font-semibold text-gray-800">
-                                <BracketTeam name={match.local} />
+                                <BracketTeam equipo={match.local} />
                                 <div className="rounded-2xl bg-gray-100 px-3 py-2 text-center text-gray-900">
                                     {match.partido?.marcador_partido ?? 'vs'}
                                 </div>
-                                <BracketTeam name={match.visitante} />
+                                <BracketTeam equipo={match.visitante} />
                             </div>
 
                             {match.partido?.estado_partido === 'jugado' ? (
@@ -976,8 +992,8 @@ type BracketMatch = {
     id: string;
     title: string;
     badge: string;
-    local: string;
-    visitante: string;
+    local: TeamBadgeEquipo;
+    visitante: TeamBadgeEquipo;
     partido?: Partido;
 };
 
@@ -990,8 +1006,8 @@ function matchFromPartido(
         id: String(partido.id),
         title,
         badge,
-        local: partido.equipo_local?.nombre_equipo ?? 'Pendiente',
-        visitante: partido.equipo_visitante?.nombre_equipo ?? 'Pendiente',
+        local: partido.equipo_local ?? { nombre_equipo: 'Pendiente' },
+        visitante: partido.equipo_visitante ?? { nombre_equipo: 'Pendiente' },
         partido,
     };
 }
@@ -1006,26 +1022,34 @@ function matchFromPlaceholder(
         id: `${title}-${local}-${visitante}`,
         title,
         badge,
-        local,
-        visitante,
+        local: { nombre_equipo: local },
+        visitante: { nombre_equipo: visitante },
     };
 }
 
-function BracketTeam({ name }: { name: string }) {
+function BracketTeam({ equipo }: { equipo: TeamBadgeEquipo }) {
     return (
-        <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-center">
-            <p className="truncate">{name}</p>
+        <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+            <TeamBadge equipo={equipo} size="sm" />
         </div>
     );
 }
 
-function TeamName({ name, align }: { name: string; align: 'left' | 'right' }) {
+function TeamName({
+    equipo,
+    placeholder,
+    align,
+}: {
+    equipo: TeamBadgeEquipo;
+    placeholder: string;
+    align: 'left' | 'right';
+}) {
     return (
-        <p
-            className={`min-w-0 truncate font-semibold text-gray-900 ${align === 'right' ? 'text-right' : 'text-left'}`}
-        >
-            {name}
-        </p>
+        <TeamBadge
+            equipo={equipo ?? { nombre_equipo: placeholder }}
+            size="sm"
+            align={align}
+        />
     );
 }
 

@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import AppShell from '@/components/layout/AppShell';
+import TeamBadge from '@/components/equipos/TeamBadge';
 
 type Inscripcion = {
     id: number;
@@ -14,6 +15,7 @@ type Inscripcion = {
     } | null;
     equipo?: {
         nombre_equipo: string;
+        escudo_equipo?: string | null;
     } | null;
 };
 
@@ -55,16 +57,20 @@ export default function Index({ inscripciones }: Props) {
                                     key={inscripcion.id}
                                     className="rounded-2xl border border-gray-200 p-4 transition-all duration-200 ease-in-out hover:shadow-sm"
                                 >
-                                    <p className="font-semibold text-gray-900">
-                                        {inscripcion.equipo?.nombre_equipo ?? 'Equipo'} en{' '}
-                                        {inscripcion.evento?.nombre_evento ?? 'evento'}
-                                    </p>
-                                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                        <div className="min-w-0">
+                                            <TeamBadge equipo={inscripcion.equipo} />
+                                            <p className="mt-2 text-sm text-gray-500">
+                                                Torneo: {inscripcion.evento?.nombre_evento ?? 'Evento'}
+                                            </p>
+                                        </div>
                                         <span
-                                            className={`rounded-full px-3 py-1 text-xs font-medium ${estadoClasses[inscripcion.estado_inscripcion] ?? 'bg-slate-200 text-slate-700'}`}
+                                            className={`w-fit rounded-full px-3 py-1 text-xs font-medium capitalize ${estadoClasses[inscripcion.estado_inscripcion] ?? 'bg-slate-200 text-slate-700'}`}
                                         >
                                             {inscripcion.estado_inscripcion}
                                         </span>
+                                    </div>
+                                    <div className="mt-3 flex flex-wrap items-center gap-3">
                                         <span className="text-sm text-gray-500">
                                             Fecha: {inscripcion.fecha_inscripcion}
                                         </span>

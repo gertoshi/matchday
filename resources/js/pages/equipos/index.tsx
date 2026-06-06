@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AppShell from '@/components/layout/AppShell';
+import { storageUrl } from '@/lib/storage';
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 
@@ -124,7 +125,7 @@ export default function Index({ equipos }: Props) {
                                 <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-[#d1fae5] text-3xl font-bold text-[#065f46]">
                                     {equipo.escudo_equipo ? (
                                         <img
-                                            src={`/storage/${equipo.escudo_equipo}`}
+                                            src={storageUrl(equipo.escudo_equipo) ?? ''}
                                             alt={equipo.nombre_equipo}
                                             className="h-full w-full rounded-3xl object-cover"
                                         />

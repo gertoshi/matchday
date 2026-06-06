@@ -43,6 +43,7 @@ class InscripcionController extends Controller
                 'equipo' => $inscripcion->equipo ? [
                     'id' => $inscripcion->equipo->id,
                     'nombre_equipo' => $inscripcion->equipo->nombre_equipo,
+                    'escudo_equipo' => $inscripcion->equipo->escudo_equipo,
                 ] : null,
             ]);
 
@@ -199,6 +200,28 @@ class InscripcionController extends Controller
             ->with('success', 'Inscripción eliminada');
     }
 
+    public function aceptar(Inscripcion $inscripcion): RedirectResponse
+    {
+        $this->autorizarGestionInscripcion($inscripcion);
+
+        $inscripcion->update([
+            'estado_inscripcion' => 'confirmada',
+        ]);
+
+        return back()->with('success', 'Inscripción aceptada.');
+    }
+
+    public function rechazar(Inscripcion $inscripcion): RedirectResponse
+    {
+        $this->autorizarGestionInscripcion($inscripcion);
+
+        $inscripcion->update([
+            'estado_inscripcion' => 'rechazada',
+        ]);
+
+        return back()->with('success', 'Inscripción rechazada.');
+    }
+
     private function autorizarInscripcion(Inscripcion $inscripcion): void
     {
         $user = auth()->user();
@@ -206,6 +229,18 @@ class InscripcionController extends Controller
 
         abort_if(
             ! $user || ($inscripcion->equipo_id !== $equipoId && ! $user->is_admin),
+            403
+        );
+    }
+
+    private function autorizarGestionInscripcion(Inscripcion $inscripcion): void
+    {
+        $inscripcion->loadMissing('evento');
+
+        $user = auth()->user();
+
+        abort_if(
+            ! $user || ($inscripcion->evento?->user_id !== $user->id && ! $user->is_admin),
             403
         );
     }

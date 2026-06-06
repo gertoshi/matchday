@@ -105,6 +105,12 @@ Route::middleware('auth')->group(function () {
         InscripcionController::class
     );
 
+    Route::post('/inscripciones/{inscripcion}/aceptar', [InscripcionController::class, 'aceptar'])
+        ->name('inscripciones.aceptar');
+
+    Route::post('/inscripciones/{inscripcion}/rechazar', [InscripcionController::class, 'rechazar'])
+        ->name('inscripciones.rechazar');
+
     Route::resource(
         'partidos',
         PartidoController::class

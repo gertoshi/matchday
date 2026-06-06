@@ -1,4 +1,5 @@
 import AdminShell from '@/components/admin/AdminShell';
+import { storageUrl } from '@/lib/storage';
 import { Head, router } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 
@@ -38,7 +39,7 @@ export default function DetalleEquipo({ equipo }: Props) {
                         <div className="flex items-center gap-5">
                             <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-emerald-100 text-3xl font-bold text-emerald-700">
                                 {equipo.escudo_equipo ? (
-                                    <img src={`/storage/${equipo.escudo_equipo}`} alt={equipo.nombre_equipo} className="h-full w-full object-cover" />
+                                    <img src={storageUrl(equipo.escudo_equipo) ?? ''} alt={equipo.nombre_equipo} className="h-full w-full object-cover" />
                                 ) : (
                                     equipo.nombre_equipo.charAt(0)
                                 )}

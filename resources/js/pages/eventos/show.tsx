@@ -1,5 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import AppShell from '@/components/layout/AppShell';
+import TeamBadge from '@/components/equipos/TeamBadge';
 
 type EventoUser = {
     id: number;
@@ -12,6 +13,7 @@ type Inscripcion = {
     equipo: {
         id: number;
         nombre_equipo: string;
+        escudo_equipo?: string | null;
     } | null;
 };
 
@@ -50,6 +52,19 @@ type Props = {
 
 export default function Show({ evento, hasEquipo }: Props) {
     const puedeInscribirse = hasEquipo && evento.estado_evento === 'abierto';
+
+    function cambiarEstadoInscripcion(inscripcionId: number, accion: 'aceptar' | 'rechazar') {
+        router.post(
+            `/inscripciones/${inscripcionId}/${accion}`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    router.reload({ only: ['evento'], preserveScroll: true });
+                },
+            },
+        );
+    }
 
     return (
         <AppShell
@@ -152,7 +167,7 @@ export default function Show({ evento, hasEquipo }: Props) {
 
                 <div className="grid gap-6 xl:grid-cols-2">
                     <section className="app-card">
-                        <h2 className="text-2xl font-bold text-gray-900">Inscripciones</h2>
+                        <h2 className="text-2xl font-bold text-gray-900">Equipos inscriptos</h2>
                         <p className="mt-2 text-gray-500">
                             Equipos anotados actualmente en el torneo.
                         </p>
@@ -168,12 +183,30 @@ export default function Show({ evento, hasEquipo }: Props) {
                                         key={inscripcion.id}
                                         className="rounded-2xl border border-gray-200 p-4 transition-all duration-200 ease-in-out hover:shadow-sm"
                                     >
-                                        <p className="font-semibold text-gray-900">
-                                            {inscripcion.equipo?.nombre_equipo ?? 'Equipo sin nombre'}
-                                        </p>
-                                        <p className="mt-1 text-sm text-gray-500">
-                                            Estado: {inscripcion.estado_inscripcion}
-                                        </p>
+                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <TeamBadge equipo={inscripcion.equipo} />
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <EstadoInscripcionBadge estado={inscripcion.estado_inscripcion} />
+                                                {evento.can_manage && inscripcion.estado_inscripcion === 'pendiente' ? (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => cambiarEstadoInscripcion(inscripcion.id, 'aceptar')}
+                                                            className="btn-primary py-2 text-sm"
+                                                        >
+                                                            Aceptar
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => cambiarEstadoInscripcion(inscripcion.id, 'rechazar')}
+                                                            className="btn-secondary py-2 text-sm"
+                                                        >
+                                                            Rechazar
+                                                        </button>
+                                                    </>
+                                                ) : null}
+                                            </div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -214,6 +247,21 @@ export default function Show({ evento, hasEquipo }: Props) {
                 </div>
             </div>
         </AppShell>
+    );
+}
+
+function EstadoInscripcionBadge({ estado }: { estado: string }) {
+    const estadoClasses: Record<string, string> = {
+        pendiente: 'bg-amber-100 text-amber-700',
+        confirmada: 'bg-emerald-100 text-emerald-700',
+        rechazada: 'bg-red-100 text-red-700',
+        cancelada: 'bg-slate-200 text-slate-700',
+    };
+
+    return (
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${estadoClasses[estado] ?? 'bg-slate-200 text-slate-700'}`}>
+            {estado}
+        </span>
     );
 }
 
