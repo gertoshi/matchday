@@ -22,6 +22,8 @@ type Evento = {
     fecha_inicio: string;
     fecha_fin: string;
     formato_evento: string;
+    tipo_inscripcion: 'gratis' | 'pago';
+    monto_inscripcion?: string | null;
     inscripciones_actuales: number;
     fixture_generado: boolean;
     fixture_disponible: boolean;
@@ -98,7 +100,7 @@ const tabs: Array<{ id: Tab; label: string }> = [
 ];
 
 export default function Fixture({ evento, grupos, partidos }: Props) {
-    const [activeTab, setActiveTab] = useState<Tab>('fase_grupos');
+    const [activeTab, setActiveTab] = useState<Tab>('informacion');
     const [selectedPartido, setSelectedPartido] = useState<Partido | null>(
         null,
     );
@@ -197,7 +199,13 @@ export default function Fixture({ evento, grupos, partidos }: Props) {
                     ))}
                 </nav>
 
-                {!evento.fixture_generado && !evento.fixture_disponible ? (
+                {activeTab === 'informacion' ? (
+                    <Informacion
+                        evento={evento}
+                        grupos={grupos}
+                        partidos={partidos}
+                    />
+                ) : !evento.fixture_generado && !evento.fixture_disponible ? (
                     <section className="app-card text-center">
                         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-700">
                             <Trophy className="h-8 w-8" />
@@ -214,13 +222,6 @@ export default function Fixture({ evento, grupos, partidos }: Props) {
                     </section>
                 ) : (
                     <>
-                        {activeTab === 'informacion' && (
-                            <Informacion
-                                evento={evento}
-                                grupos={grupos}
-                                partidos={partidos}
-                            />
-                        )}
                         {activeTab === 'fase_grupos' && (
                             <FixtureTab evento={evento} grupos={grupos} />
                         )}
@@ -270,39 +271,84 @@ function Informacion({
     const partidosEliminatorios = partidos.filter(
         (partido) => partido.fase !== 'grupo',
     );
+    const descripcion =
+        evento.descripcion_evento?.trim() ||
+        'Este torneo todavía no tiene una descripción cargada.';
 
     return (
         <div className="space-y-6">
             <section className="app-card">
-                <h2 className="section-title">Descripción general</h2>
-                <p className="mt-4 whitespace-pre-line text-gray-500">
-                    {evento.descripcion_evento?.trim() ||
-                        'Este torneo todavía no tiene una descripción cargada.'}
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                        <p className="text-sm font-semibold text-emerald-600">
+                            Información del torneo
+                        </p>
+                        <h2 className="mt-1 text-2xl font-bold text-gray-900">
+                            {evento.nombre_evento}
+                        </h2>
+                    </div>
+                    <span className="w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
+                        {evento.estado_evento}
+                    </span>
+                </div>
+
+                <p className="mt-5 whitespace-pre-line text-gray-500">
+                    {descripcion}
                 </p>
             </section>
 
             <section className="app-card">
-                <h2 className="section-title">Resumen del fixture</h2>
-                <div className="mt-6 grid gap-4 md:grid-cols-3">
+                <h2 className="section-title">Datos principales</h2>
+                <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <InfoBox
+                        label="Ubicación"
+                        value={evento.ubicacion_evento}
+                    />
                     <InfoBox
                         label="Formato"
+                        value={formatoLabel(evento.formato_evento)}
+                    />
+                    <InfoBox
+                        label="Cupo"
+                        value={`${evento.cupo_evento} equipos`}
+                    />
+                    <InfoBox
+                        label="Tipo de inscripción"
                         value={
-                            evento.cupo_evento === 8
-                                ? '2 grupos de 4'
-                                : '2 grupos de 2'
+                            evento.tipo_inscripcion === 'pago'
+                                ? 'Pago'
+                                : 'Gratis'
                         }
                     />
                     <InfoBox
-                        label="Grupos generados"
-                        value={String(grupos.length)}
+                        label="Monto de inscripción"
+                        value={inscripcionLabel(
+                            evento.tipo_inscripcion,
+                            evento.monto_inscripcion,
+                        )}
+                    />
+                    <InfoBox label="Estado" value={evento.estado_evento} />
+                    <InfoBox label="Inicio" value={evento.fecha_inicio} />
+                    <InfoBox label="Fin" value={evento.fecha_fin} />
+                    <InfoBox
+                        label="Organizador"
+                        value={evento.user?.name ?? 'Sin organizador'}
+                    />
+                    <InfoBox
+                        label="Equipos inscritos"
+                        value={`${evento.inscripciones_actuales} / ${evento.cupo_evento}`}
+                    />
+                    <InfoBox
+                        label="Grupos"
+                        value={`${grupos.length} generados`}
                     />
                     <InfoBox
                         label="Partidos de grupo"
-                        value={String(partidosGrupo.length)}
+                        value={`${partidosGrupo.length} partidos`}
                     />
                     <InfoBox
-                        label="Eliminatorias"
-                        value={String(partidosEliminatorios.length)}
+                        label="Partidos eliminatorios"
+                        value={`${partidosEliminatorios.length} partidos`}
                     />
                 </div>
             </section>
@@ -637,6 +683,13 @@ function Eliminatorias({
                 </span>
             </div>
 
+            {!gruposCompletos && (
+                <p className="mt-5 rounded-3xl bg-gray-50 px-5 py-4 text-sm font-semibold text-gray-500">
+                    Las eliminatorias se generarán cuando finalice la fase de
+                    grupos.
+                </p>
+            )}
+
             <div className="mt-6 grid gap-4 lg:grid-cols-3">
                 <BracketColumn
                     title="Semifinales"
@@ -691,7 +744,13 @@ function ResultadoModal({
         event.preventDefault();
         put(`/partidos/${partido.id}/resultado`, {
             preserveScroll: true,
-            onSuccess: onClose,
+            onSuccess: () => {
+                onClose();
+                router.reload({
+                    only: ['evento', 'grupos', 'partidos'],
+                    preserveScroll: true,
+                });
+            },
         });
     }
 
@@ -968,6 +1027,33 @@ function TeamName({ name, align }: { name: string; align: 'left' | 'right' }) {
             {name}
         </p>
     );
+}
+
+function inscripcionLabel(
+    tipo: Evento['tipo_inscripcion'],
+    monto?: string | null,
+) {
+    return tipo === 'pago'
+        ? `${formatMoney(monto)} por equipo`
+        : 'No corresponde';
+}
+
+function formatoLabel(formato: string) {
+    const formatos: Record<string, string> = {
+        futbol_5: 'Fútbol 5',
+        futbol_7: 'Fútbol 7',
+    };
+
+    return formatos[formato] ?? formato;
+}
+
+function formatMoney(value?: string | null) {
+    const amount = Number(value ?? 0);
+
+    return `$${amount.toLocaleString('es-AR', {
+        minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+        maximumFractionDigits: 2,
+    })}`;
 }
 
 Fixture.layout = null;

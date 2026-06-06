@@ -231,6 +231,78 @@ test('normal users cannot update results', function () {
     expect($partido->fresh()->estado_partido)->toBe('pendiente');
 });
 
+test('admin can update results for any tournament', function () {
+    $organizer = User::factory()->create();
+    $admin = User::factory()->create(['is_admin' => true]);
+    $evento = createEvento($organizer, 4);
+    createInscripciones($evento, 4);
+
+    $this->actingAs($organizer)
+        ->post(route('eventos.fixture.generar', $evento));
+
+    $partido = Partido::query()
+        ->where('evento_id', $evento->id)
+        ->firstOrFail();
+
+    $this->actingAs($admin)
+        ->put(route('partidos.resultado.update', $partido), [
+            'goles_local' => 2,
+            'goles_visitante' => 1,
+        ])
+        ->assertRedirect();
+
+    expect($partido->fresh()->estado_partido)->toBe('jugado');
+});
+
+test('knockout results cannot be tied and final result determines champion', function () {
+    $organizer = User::factory()->create();
+    $evento = createEvento($organizer, 4);
+    createInscripciones($evento, 4);
+
+    $this->actingAs($organizer)
+        ->post(route('eventos.fixture.generar', $evento));
+
+    Partido::query()
+        ->where('evento_id', $evento->id)
+        ->where('fase', 'grupo')
+        ->get()
+        ->each(function (Partido $partido) use ($organizer): void {
+            $this->actingAs($organizer)
+                ->put(route('partidos.resultado.update', $partido), [
+                    'goles_local' => 1,
+                    'goles_visitante' => 0,
+                ]);
+        });
+
+    $final = Partido::query()
+        ->where('evento_id', $evento->id)
+        ->where('fase', 'final')
+        ->firstOrFail();
+
+    $this->actingAs($organizer)
+        ->from(route('eventos.fixture.show', $evento))
+        ->put(route('partidos.resultado.update', $final), [
+            'goles_local' => 1,
+            'goles_visitante' => 1,
+        ])
+        ->assertSessionHasErrors([
+            'resultado' => 'En eliminatorias debe haber un ganador.',
+        ]);
+
+    $this->actingAs($organizer)
+        ->put(route('partidos.resultado.update', $final), [
+            'goles_local' => 3,
+            'goles_visitante' => 2,
+        ])
+        ->assertRedirect();
+
+    $final->refresh();
+
+    expect($final->estado_partido)->toBe('jugado')
+        ->and($final->marcador_partido)->toBe('3 - 2')
+        ->and($final->ganador_partido)->toBe($final->equipoLocal->nombre_equipo);
+});
+
 function createEvento(User $organizer, int $cupo): Evento
 {
     return Evento::create([
@@ -243,6 +315,8 @@ function createEvento(User $organizer, int $cupo): Evento
         'fecha_fin' => now()->addWeek()->toDateString(),
         'descripcion_evento' => null,
         'formato_evento' => 'futbol_5',
+        'tipo_inscripcion' => 'gratis',
+        'monto_inscripcion' => null,
     ]);
 }
 

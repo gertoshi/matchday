@@ -16,6 +16,8 @@ class FixtureController extends Controller
 {
     public function show(Evento $evento): Response
     {
+        $this->generarEliminatoriasSiCorresponde($evento);
+
         $evento->load([
             'user',
             'fixtureGrupos.equiposGrupo.equipo.user',
@@ -41,6 +43,8 @@ class FixtureController extends Controller
                 'fecha_inicio' => optional($evento->fecha_inicio)->format('Y-m-d'),
                 'fecha_fin' => optional($evento->fecha_fin)->format('Y-m-d'),
                 'formato_evento' => $evento->formato_evento,
+                'tipo_inscripcion' => $evento->tipo_inscripcion,
+                'monto_inscripcion' => $evento->monto_inscripcion,
                 'user' => $evento->user ? [
                     'id' => $evento->user->id,
                     'name' => $evento->user->name,
@@ -193,6 +197,12 @@ class FixtureController extends Controller
             'goles_local' => ['required', 'integer', 'min:0'],
             'goles_visitante' => ['required', 'integer', 'min:0'],
         ]);
+
+        if (in_array($partido->fase, ['semifinal', 'final'], true) && $datos['goles_local'] === $datos['goles_visitante']) {
+            return back()->withErrors([
+                'resultado' => 'En eliminatorias debe haber un ganador.',
+            ]);
+        }
 
         abort_if(
             ! $partido->equipo_local_id || ! $partido->equipo_visitante_id,
@@ -380,8 +390,8 @@ class FixtureController extends Controller
         $this->crearPartidoEliminatorio(
             $evento,
             'semifinal',
-            (int) $tablaB[0]->equipo_id,
             (int) $tablaA[1]->equipo_id,
+            (int) $tablaB[0]->equipo_id,
         );
     }
 
@@ -416,10 +426,6 @@ class FixtureController extends Controller
 
     private function generarFinalSiCorresponde(Evento $evento): void
     {
-        if ($evento->partidos()->where('fase', 'final')->exists()) {
-            return;
-        }
-
         $semifinales = $evento->partidos()
             ->where('fase', 'semifinal')
             ->where('estado_partido', 'jugado')
@@ -436,6 +442,19 @@ class FixtureController extends Controller
             ->values();
 
         if ($finalistas->count() !== 2) {
+            return;
+        }
+
+        $final = $evento->partidos()->where('fase', 'final')->first();
+
+        if ($final) {
+            if ($final->estado_partido === 'pendiente' && (! $final->equipo_local_id || ! $final->equipo_visitante_id)) {
+                $final->update([
+                    'equipo_local_id' => $final->equipo_local_id ?: (int) $finalistas[0],
+                    'equipo_visitante_id' => $final->equipo_visitante_id ?: (int) $finalistas[1],
+                ]);
+            }
+
             return;
         }
 
