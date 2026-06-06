@@ -34,6 +34,7 @@ class FixtureController extends Controller
             'evento' => [
                 'id' => $evento->id,
                 'nombre_evento' => $evento->nombre_evento,
+                'descripcion_evento' => $evento->descripcion_evento,
                 'ubicacion_evento' => $evento->ubicacion_evento,
                 'cupo_evento' => $evento->cupo_evento,
                 'estado_evento' => $evento->estado_evento,
@@ -58,7 +59,15 @@ class FixtureController extends Controller
                     'id' => $grupo->id,
                     'nombre_grupo' => $grupo->nombre_grupo,
                     'equipos' => $grupo->equiposGrupo
-                        ->sortBy('posicion')
+                        ->sort(fn (FixtureGrupoEquipo $a, FixtureGrupoEquipo $b): int => [
+                            $b->puntos,
+                            $b->diferencia_goles,
+                            $b->goles_favor,
+                        ] <=> [
+                            $a->puntos,
+                            $a->diferencia_goles,
+                            $a->goles_favor,
+                        ])
                         ->map(fn (FixtureGrupoEquipo $grupoEquipo) => [
                             'id' => $grupoEquipo->id,
                             'posicion' => $grupoEquipo->posicion,
