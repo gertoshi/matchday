@@ -1,8 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { Eye, Pencil, Plus, Shield, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import { storageUrl } from '@/lib/storage';
-import { Eye, Pencil, Plus, Shield, Trash2 } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
 
 type Jugador = {
     id: number;
@@ -128,11 +129,9 @@ export default function Index({ equipos }: Props) {
                                 <div className="flex h-36 w-36 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-emerald-100 bg-emerald-50 text-[#065f46]">
                                     {equipo.escudo_equipo ? (
                                         <img
-                                            src={
-                                                storageUrl(
-                                                    equipo.escudo_equipo,
-                                                ) ?? ''
-                                            }
+                                            src={storageUrl(
+                                                equipo.escudo_equipo,
+                                            )}
                                             alt={equipo.nombre_equipo}
                                             className="h-full w-full object-cover object-center"
                                         />

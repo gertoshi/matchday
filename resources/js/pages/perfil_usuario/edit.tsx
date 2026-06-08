@@ -42,7 +42,7 @@ export default function Edit({ perfil }: Props) {
                         {perfil.foto_perfil ? (
                             <div className="h-24 w-24 overflow-hidden rounded-3xl border border-gray-200">
                                 <img
-                                    src={storageUrl(perfil.foto_perfil) ?? ''}
+                                    src={storageUrl(perfil.foto_perfil)}
                                     alt={`${perfil.nombre} ${perfil.apellido}`}
                                     className="h-full w-full object-cover object-center"
                                 />

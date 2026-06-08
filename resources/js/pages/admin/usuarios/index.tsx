@@ -1,9 +1,10 @@
+import { Head, Link, router } from '@inertiajs/react';
+import { Eye, Search, ShieldBan, Trash2, Undo2 } from 'lucide-react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import AdminShell from '@/components/admin/AdminShell';
 import ModalSancion from '@/components/admin/ModalSancion';
 import { storageUrl } from '@/lib/storage';
-import { Head, Link, router } from '@inertiajs/react';
-import { Eye, Search, ShieldBan, Trash2, Undo2 } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
 
 type Usuario = {
     id: number;
@@ -238,7 +239,7 @@ function Avatar({ usuario }: { usuario: Usuario }) {
         <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-emerald-100 font-bold text-emerald-700">
             {foto ? (
                 <img
-                    src={storageUrl(foto) ?? ''}
+                    src={storageUrl(foto)}
                     alt={usuario.name}
                     className="h-full w-full object-cover object-center"
                 />

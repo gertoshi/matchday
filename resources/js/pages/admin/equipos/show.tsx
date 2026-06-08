@@ -1,7 +1,7 @@
+import { Head, router } from '@inertiajs/react';
+import { Shield, Trash2 } from 'lucide-react';
 import AdminShell from '@/components/admin/AdminShell';
 import { storageUrl } from '@/lib/storage';
-import { Head, router } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
 
 type Equipo = {
     id: number;
@@ -60,18 +60,15 @@ export default function DetalleEquipo({ equipo }: Props) {
                 <section className="app-card">
                     <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                         <div className="flex items-center gap-5">
-                            <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-emerald-100 text-3xl font-bold text-emerald-700">
+                            <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-emerald-100 bg-emerald-50 text-emerald-700">
                                 {equipo.escudo_equipo ? (
                                     <img
-                                        src={
-                                            storageUrl(equipo.escudo_equipo) ??
-                                            ''
-                                        }
+                                        src={storageUrl(equipo.escudo_equipo)}
                                         alt={equipo.nombre_equipo}
                                         className="h-full w-full object-cover object-center"
                                     />
                                 ) : (
-                                    equipo.nombre_equipo.charAt(0)
+                                    <Shield className="h-12 w-12" />
                                 )}
                             </div>
                             <div>

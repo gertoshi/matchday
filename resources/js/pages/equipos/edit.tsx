@@ -89,10 +89,7 @@ export default function Edit({ equipo }: Props) {
                             {equipo.escudo_equipo && (
                                 <div className="h-24 w-24 overflow-hidden rounded-3xl border border-gray-200">
                                     <img
-                                        src={
-                                            storageUrl(equipo.escudo_equipo) ??
-                                            ''
-                                        }
+                                        src={storageUrl(equipo.escudo_equipo)}
                                         alt={equipo.nombre_equipo}
                                         className="h-full w-full object-cover object-center"
                                     />

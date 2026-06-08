@@ -1,3 +1,5 @@
+export function storageUrl(path: string): string;
+export function storageUrl(path?: string | null): string | null;
 export function storageUrl(path?: string | null): string | null {
     if (!path) {
         return null;

@@ -1,5 +1,5 @@
-import { storageUrl } from '@/lib/storage';
 import { Shield } from 'lucide-react';
+import { storageUrl } from '@/lib/storage';
 
 export type TeamBadgeEquipo =
     | {
