@@ -34,10 +34,12 @@ export default function Show({ perfil }: Props) {
                 {!perfil && (
                     <section className="app-card border-dashed">
                         <p className="text-lg font-semibold text-[var(--foreground)]">
-                            Completá tu perfil para continuar usando la plataforma.
+                            Completá tu perfil para continuar usando la
+                            plataforma.
                         </p>
                         <p className="mt-2 text-[var(--muted-foreground)]">
-                            Todavía no cargaste tu nombre, apellido ni foto de perfil.
+                            Todavía no cargaste tu nombre, apellido ni foto de
+                            perfil.
                         </p>
                         <Link
                             href="/perfil/create"
@@ -54,9 +56,15 @@ export default function Show({ perfil }: Props) {
                             Datos de la cuenta
                         </h2>
                         <div className="mt-6 grid gap-4 md:grid-cols-2">
-                            <InfoRow label="Usuario" value={user?.name ?? '-'} />
+                            <InfoRow
+                                label="Usuario"
+                                value={user?.name ?? '-'}
+                            />
                             <InfoRow label="Email" value={user?.email ?? '-'} />
-                            <InfoRow label="Teléfono" value={user?.phone ?? '-'} />
+                            <InfoRow
+                                label="Teléfono"
+                                value={user?.phone ?? '-'}
+                            />
                             <InfoRow
                                 label="Fecha de nacimiento"
                                 value={formatDate(user?.birth_date)}
@@ -83,11 +91,17 @@ export default function Show({ perfil }: Props) {
                             <div className="mt-6 space-y-4">
                                 <div className="flex items-center gap-4">
                                     {perfil.foto_perfil ? (
-                                        <img
-                                            src={storageUrl(perfil.foto_perfil) ?? ''}
-                                            alt={`${perfil.nombre} ${perfil.apellido}`}
-                                            className="h-20 w-20 rounded-3xl object-cover"
-                                        />
+                                        <div className="h-20 w-20 overflow-hidden rounded-3xl border border-gray-200">
+                                            <img
+                                                src={
+                                                    storageUrl(
+                                                        perfil.foto_perfil,
+                                                    ) ?? ''
+                                                }
+                                                alt={`${perfil.nombre} ${perfil.apellido}`}
+                                                className="h-full w-full object-cover object-center"
+                                            />
+                                        </div>
                                     ) : (
                                         <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--accent)] text-2xl font-bold text-[var(--accent-foreground)]">
                                             {perfil.nombre.charAt(0)}
@@ -118,10 +132,12 @@ export default function Show({ perfil }: Props) {
 function InfoRow({ label, value }: { label: string; value: string }) {
     return (
         <div className="rounded-2xl bg-gray-50 p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
+            <p className="text-xs font-medium tracking-wide text-[var(--muted-foreground)] uppercase">
                 {label}
             </p>
-            <p className="mt-2 font-semibold text-[var(--foreground)]">{value}</p>
+            <p className="mt-2 font-semibold text-[var(--foreground)]">
+                {value}
+            </p>
         </div>
     );
 }

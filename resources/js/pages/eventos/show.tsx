@@ -53,14 +53,17 @@ type Props = {
 export default function Show({ evento, hasEquipo }: Props) {
     const puedeInscribirse = hasEquipo && evento.estado_evento === 'abierto';
 
-    function cambiarEstadoInscripcion(inscripcionId: number, accion: 'aceptar' | 'rechazar') {
+    function cambiarEstadoInscripcion(
+        inscripcionId: number,
+        accion: 'aceptar' | 'rechazar',
+    ) {
         router.post(
             `/inscripciones/${inscripcionId}/${accion}`,
             {},
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    router.reload({ only: ['evento'], preserveScroll: true });
+                    router.reload({ only: ['evento'] });
                 },
             },
         );
@@ -83,7 +86,9 @@ export default function Show({ evento, hasEquipo }: Props) {
                             <p className="mt-1 text-3xl font-bold text-gray-900">
                                 {evento.nombre_evento}
                             </p>
-                            <p className="mt-2 text-gray-500">{evento.ubicacion_evento}</p>
+                            <p className="mt-2 text-gray-500">
+                                {evento.ubicacion_evento}
+                            </p>
                         </div>
 
                         <span className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700">
@@ -98,11 +103,20 @@ export default function Show({ evento, hasEquipo }: Props) {
                     <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <InfoRow label="Inicio" value={evento.fecha_inicio} />
                         <InfoRow label="Fin" value={evento.fecha_fin} />
-                        <InfoRow label="Cupo" value={String(evento.cupo_evento)} />
-                        <InfoRow label="Formato" value={formatoLabel(evento.formato_evento)} />
+                        <InfoRow
+                            label="Cupo"
+                            value={String(evento.cupo_evento)}
+                        />
+                        <InfoRow
+                            label="Formato"
+                            value={formatoLabel(evento.formato_evento)}
+                        />
                         <InfoRow
                             label="Inscripción"
-                            value={inscripcionLabel(evento.tipo_inscripcion, evento.monto_inscripcion)}
+                            value={inscripcionLabel(
+                                evento.tipo_inscripcion,
+                                evento.monto_inscripcion,
+                            )}
                         />
                         <InfoRow
                             label="Organizador"
@@ -115,17 +129,17 @@ export default function Show({ evento, hasEquipo }: Props) {
                     </div>
 
                     <div className="rounded-2xl bg-gray-50 p-5">
-                        <p className="text-sm font-medium text-gray-700">Descripción</p>
+                        <p className="text-sm font-medium text-gray-700">
+                            Descripción
+                        </p>
                         <p className="mt-2 text-sm leading-6 text-gray-500">
-                            {evento.descripcion_evento || 'Sin descripción adicional.'}
+                            {evento.descripcion_evento ||
+                                'Sin descripción adicional.'}
                         </p>
                     </div>
 
                     <div className="mt-8 flex flex-wrap items-center gap-3">
-                        <Link
-                            href="/eventos"
-                            className="btn-secondary"
-                        >
+                        <Link href="/eventos" className="btn-secondary">
                             Volver a torneos
                         </Link>
 
@@ -167,7 +181,9 @@ export default function Show({ evento, hasEquipo }: Props) {
 
                 <div className="grid gap-6 xl:grid-cols-2">
                     <section className="app-card">
-                        <h2 className="text-2xl font-bold text-gray-900">Equipos inscriptos</h2>
+                        <h2 className="text-2xl font-bold text-gray-900">
+                            Equipos inscriptos
+                        </h2>
                         <p className="mt-2 text-gray-500">
                             Equipos anotados actualmente en el torneo.
                         </p>
@@ -184,21 +200,39 @@ export default function Show({ evento, hasEquipo }: Props) {
                                         className="rounded-2xl border border-gray-200 p-4 transition-all duration-200 ease-in-out hover:shadow-sm"
                                     >
                                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                            <TeamBadge equipo={inscripcion.equipo} />
+                                            <TeamBadge
+                                                equipo={inscripcion.equipo}
+                                            />
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <EstadoInscripcionBadge estado={inscripcion.estado_inscripcion} />
-                                                {evento.can_manage && inscripcion.estado_inscripcion === 'pendiente' ? (
+                                                <EstadoInscripcionBadge
+                                                    estado={
+                                                        inscripcion.estado_inscripcion
+                                                    }
+                                                />
+                                                {evento.can_manage &&
+                                                inscripcion.estado_inscripcion ===
+                                                    'pendiente' ? (
                                                     <>
                                                         <button
                                                             type="button"
-                                                            onClick={() => cambiarEstadoInscripcion(inscripcion.id, 'aceptar')}
+                                                            onClick={() =>
+                                                                cambiarEstadoInscripcion(
+                                                                    inscripcion.id,
+                                                                    'aceptar',
+                                                                )
+                                                            }
                                                             className="btn-primary py-2 text-sm"
                                                         >
                                                             Aceptar
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            onClick={() => cambiarEstadoInscripcion(inscripcion.id, 'rechazar')}
+                                                            onClick={() =>
+                                                                cambiarEstadoInscripcion(
+                                                                    inscripcion.id,
+                                                                    'rechazar',
+                                                                )
+                                                            }
                                                             className="btn-secondary py-2 text-sm"
                                                         >
                                                             Rechazar
@@ -214,7 +248,9 @@ export default function Show({ evento, hasEquipo }: Props) {
                     </section>
 
                     <section className="app-card">
-                        <h2 className="text-2xl font-bold text-gray-900">Partidos</h2>
+                        <h2 className="text-2xl font-bold text-gray-900">
+                            Partidos
+                        </h2>
                         <p className="mt-2 text-gray-500">
                             Programación actual del torneo.
                         </p>
@@ -259,7 +295,9 @@ function EstadoInscripcionBadge({ estado }: { estado: string }) {
     };
 
     return (
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${estadoClasses[estado] ?? 'bg-slate-200 text-slate-700'}`}>
+        <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${estadoClasses[estado] ?? 'bg-slate-200 text-slate-700'}`}
+        >
             {estado}
         </span>
     );
@@ -268,7 +306,7 @@ function EstadoInscripcionBadge({ estado }: { estado: string }) {
 function InfoRow({ label, value }: { label: string; value: string }) {
     return (
         <div className="rounded-2xl bg-gray-50 p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
                 {label}
             </p>
             <p className="mt-2 font-semibold text-gray-900">{value}</p>
@@ -298,7 +336,10 @@ function InscripcionBadge({
     );
 }
 
-function inscripcionLabel(tipo: Evento['tipo_inscripcion'], monto?: string | null) {
+function inscripcionLabel(
+    tipo: Evento['tipo_inscripcion'],
+    monto?: string | null,
+) {
     return tipo === 'pago' ? `${formatMoney(monto)} por equipo` : 'Gratis';
 }
 

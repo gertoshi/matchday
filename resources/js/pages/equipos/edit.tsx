@@ -51,7 +51,9 @@ export default function Edit({ equipo }: Props) {
                             <input
                                 type="text"
                                 value={data.nombre_equipo}
-                                onChange={(e) => setData('nombre_equipo', e.target.value)}
+                                onChange={(e) =>
+                                    setData('nombre_equipo', e.target.value)
+                                }
                                 className="app-input mt-2 w-full"
                             />
 
@@ -63,16 +65,16 @@ export default function Edit({ equipo }: Props) {
                         </div>
 
                         <div>
-                            <label className="field-label">
-                                Plantilla
-                            </label>
+                            <label className="field-label">Plantilla</label>
 
                             <input
                                 type="number"
                                 min={0}
                                 max={50}
                                 value={data.plantilla}
-                                onChange={(e) => setData('plantilla', Number(e.target.value))}
+                                onChange={(e) =>
+                                    setData('plantilla', Number(e.target.value))
+                                }
                                 className="app-input mt-2 w-full"
                             />
 
@@ -85,11 +87,16 @@ export default function Edit({ equipo }: Props) {
 
                         <div className="space-y-3">
                             {equipo.escudo_equipo && (
-                                <img
-                                    src={storageUrl(equipo.escudo_equipo) ?? ''}
-                                    alt={equipo.nombre_equipo}
-                                    className="h-24 w-24 rounded-2xl object-cover"
-                                />
+                                <div className="h-24 w-24 overflow-hidden rounded-3xl border border-gray-200">
+                                    <img
+                                        src={
+                                            storageUrl(equipo.escudo_equipo) ??
+                                            ''
+                                        }
+                                        alt={equipo.nombre_equipo}
+                                        className="h-full w-full object-cover object-center"
+                                    />
+                                </div>
                             )}
 
                             <div>
@@ -103,7 +110,7 @@ export default function Edit({ equipo }: Props) {
                                     onChange={(e) =>
                                         setData(
                                             'escudo_equipo',
-                                            e.target.files?.[0] ?? null
+                                            e.target.files?.[0] ?? null,
                                         )
                                     }
                                     className="app-input mt-2 w-full"
@@ -118,10 +125,7 @@ export default function Edit({ equipo }: Props) {
                         </div>
 
                         <div className="flex justify-end gap-4 pt-4">
-                            <Link
-                                href="/equipos"
-                                className="btn-secondary"
-                            >
+                            <Link href="/equipos" className="btn-secondary">
                                 Cancelar
                             </Link>
 

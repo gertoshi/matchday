@@ -30,37 +30,58 @@ type Props = {
 export default function GestionUsuarios({ usuarios, filters }: Props) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
-    const [modal, setModal] = useState<{ user: Usuario; tipo: 'suspender' | 'banear' } | null>(null);
+    const [modal, setModal] = useState<{
+        user: Usuario;
+        tipo: 'suspender' | 'banear';
+    } | null>(null);
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        router.get('/admin/usuarios', { search, status }, { preserveState: true, preserveScroll: true });
+        router.get(
+            '/admin/usuarios',
+            { search, status },
+            { preserveState: true, preserveScroll: true },
+        );
     }
 
     function reactivar(usuario: Usuario) {
-        router.post(`/admin/usuarios/${usuario.id}/reactivar`, {}, { preserveScroll: true });
+        router.post(
+            `/admin/usuarios/${usuario.id}/reactivar`,
+            {},
+            { preserveScroll: true },
+        );
     }
 
     function eliminar(usuario: Usuario) {
         if (window.confirm(`¿Marcar como eliminado a ${usuario.name}?`)) {
-            router.delete(`/admin/usuarios/${usuario.id}`, { preserveScroll: true });
+            router.delete(`/admin/usuarios/${usuario.id}`, {
+                preserveScroll: true,
+            });
         }
     }
 
     return (
-        <AdminShell title="Usuarios" subtitle="Gestión de usuarios, estados y sanciones.">
+        <AdminShell
+            title="Usuarios"
+            subtitle="Gestión de usuarios, estados y sanciones."
+        >
             <Head title="Usuarios admin" />
 
             <div className="space-y-6">
                 <section className="app-card">
-                    <form onSubmit={submit} className="grid gap-4 lg:grid-cols-[1fr_220px_auto] lg:items-end">
+                    <form
+                        onSubmit={submit}
+                        className="grid gap-4 lg:grid-cols-[1fr_220px_auto] lg:items-end"
+                    >
                         <label className="block">
                             <span className="field-label">Buscar</span>
                             <div className="relative">
-                                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                                <Search className="pointer-events-none absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-gray-400" />
                                 <input
                                     value={search}
-                                    onChange={(event) => setSearch(event.target.value)}
+                                    onChange={(event) =>
+                                        setSearch(event.target.value)
+                                    }
                                     className="app-input pl-12"
                                     placeholder="Nombre o email"
                                 />
@@ -68,7 +89,13 @@ export default function GestionUsuarios({ usuarios, filters }: Props) {
                         </label>
                         <label className="block">
                             <span className="field-label">Estado</span>
-                            <select value={status} onChange={(event) => setStatus(event.target.value)} className="app-select">
+                            <select
+                                value={status}
+                                onChange={(event) =>
+                                    setStatus(event.target.value)
+                                }
+                                className="app-select"
+                            >
                                 <option value="">Todos</option>
                                 <option value="activo">Activo</option>
                                 <option value="suspendido">Suspendido</option>
@@ -93,7 +120,9 @@ export default function GestionUsuarios({ usuarios, filters }: Props) {
                                     <th className="px-5 py-4">Teléfono</th>
                                     <th className="px-5 py-4">Estado</th>
                                     <th className="px-5 py-4">Equipo</th>
-                                    <th className="px-5 py-4">Fecha de registro</th>
+                                    <th className="px-5 py-4">
+                                        Fecha de registro
+                                    </th>
                                     <th className="px-5 py-4">Acciones</th>
                                 </tr>
                             </thead>
@@ -103,32 +132,78 @@ export default function GestionUsuarios({ usuarios, filters }: Props) {
                                         <td className="px-5 py-4">
                                             <Avatar usuario={usuario} />
                                         </td>
-                                        <td className="px-5 py-4 font-semibold text-gray-900">{usuario.name}</td>
-                                        <td className="px-5 py-4">{usuario.email}</td>
-                                        <td className="px-5 py-4">{usuario.phone ?? 'Sin teléfono'}</td>
-                                        <td className="px-5 py-4">
-                                            <StatusBadge value={usuario.status} />
+                                        <td className="px-5 py-4 font-semibold text-gray-900">
+                                            {usuario.name}
                                         </td>
-                                        <td className="px-5 py-4">{usuario.equipo?.nombre_equipo ?? 'Sin equipo'}</td>
-                                        <td className="px-5 py-4">{formatDate(usuario.created_at)}</td>
+                                        <td className="px-5 py-4">
+                                            {usuario.email}
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            {usuario.phone ?? 'Sin teléfono'}
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            <StatusBadge
+                                                value={usuario.status}
+                                            />
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            {usuario.equipo?.nombre_equipo ??
+                                                'Sin equipo'}
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            {formatDate(usuario.created_at)}
+                                        </td>
                                         <td className="px-5 py-4">
                                             <div className="flex flex-wrap gap-2">
-                                                <Link href={`/admin/usuarios/${usuario.id}`} className="btn-secondary px-3 py-2">
+                                                <Link
+                                                    href={`/admin/usuarios/${usuario.id}`}
+                                                    className="btn-secondary px-3 py-2"
+                                                >
                                                     <Eye className="h-4 w-4" />
                                                     Ver
                                                 </Link>
-                                                <button type="button" onClick={() => setModal({ user: usuario, tipo: 'suspender' })} className="btn-secondary px-3 py-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setModal({
+                                                            user: usuario,
+                                                            tipo: 'suspender',
+                                                        })
+                                                    }
+                                                    className="btn-secondary px-3 py-2"
+                                                >
                                                     Suspender
                                                 </button>
-                                                <button type="button" onClick={() => setModal({ user: usuario, tipo: 'banear' })} className="btn-danger px-3 py-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setModal({
+                                                            user: usuario,
+                                                            tipo: 'banear',
+                                                        })
+                                                    }
+                                                    className="btn-danger px-3 py-2"
+                                                >
                                                     <ShieldBan className="h-4 w-4" />
                                                     Banear
                                                 </button>
-                                                <button type="button" onClick={() => reactivar(usuario)} className="btn-blue px-3 py-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        reactivar(usuario)
+                                                    }
+                                                    className="btn-blue px-3 py-2"
+                                                >
                                                     <Undo2 className="h-4 w-4" />
                                                     Reactivar
                                                 </button>
-                                                <button type="button" onClick={() => eliminar(usuario)} className="btn-danger px-3 py-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        eliminar(usuario)
+                                                    }
+                                                    className="btn-danger px-3 py-2"
+                                                >
                                                     <Trash2 className="h-4 w-4" />
                                                 </button>
                                             </div>
@@ -161,7 +236,15 @@ function Avatar({ usuario }: { usuario: Usuario }) {
 
     return (
         <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-emerald-100 font-bold text-emerald-700">
-            {foto ? <img src={storageUrl(foto) ?? ''} alt={usuario.name} className="h-full w-full object-cover" /> : usuario.name.charAt(0)}
+            {foto ? (
+                <img
+                    src={storageUrl(foto) ?? ''}
+                    alt={usuario.name}
+                    className="h-full w-full object-cover object-center"
+                />
+            ) : (
+                usuario.name.charAt(0)
+            )}
         </div>
     );
 }
@@ -174,7 +257,13 @@ function StatusBadge({ value }: { value: string }) {
         eliminado: 'bg-slate-200 text-slate-700',
     };
 
-    return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${classes[value] ?? classes.eliminado}`}>{value}</span>;
+    return (
+        <span
+            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${classes[value] ?? classes.eliminado}`}
+        >
+            {value}
+        </span>
+    );
 }
 
 function Pagination({ links }: { links: Paginated<Usuario>['links'] }) {
@@ -186,7 +275,9 @@ function Pagination({ links }: { links: Paginated<Usuario>['links'] }) {
                     href={link.url ?? '#'}
                     preserveScroll
                     className={`rounded-xl border px-4 py-2 text-sm font-semibold ${
-                        link.active ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                        link.active
+                            ? 'border-emerald-600 bg-emerald-600 text-white'
+                            : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
                     } ${!link.url ? 'pointer-events-none opacity-50' : ''}`}
                     dangerouslySetInnerHTML={{ __html: link.label }}
                 />

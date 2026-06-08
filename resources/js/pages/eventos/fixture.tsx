@@ -1,6 +1,8 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppShell from '@/components/layout/AppShell';
-import TeamBadge, { type TeamBadgeEquipo } from '@/components/equipos/TeamBadge';
+import TeamBadge, {
+    type TeamBadgeEquipo,
+} from '@/components/equipos/TeamBadge';
 import {
     CalendarDays,
     Medal,
@@ -538,7 +540,10 @@ function TablaTab({ grupos }: { grupos: Grupo[] }) {
                                     {grupo.equipos.map((grupoEquipo) => (
                                         <tr key={grupoEquipo.id}>
                                             <td className="px-5 py-4">
-                                                <TeamBadge equipo={grupoEquipo.equipo} size="sm" />
+                                                <TeamBadge
+                                                    equipo={grupoEquipo.equipo}
+                                                    size="sm"
+                                                />
                                             </td>
                                             <td className="px-5 py-4">
                                                 {grupoEquipo.partidos_jugados}
@@ -674,11 +679,7 @@ function Eliminatorias({
               );
     const finalCards = [
         final
-            ? matchFromPartido(
-                  'Final',
-                  'Ganadores de semifinales',
-                  final,
-              )
+            ? matchFromPartido('Final', 'Ganadores de semifinales', final)
             : matchFromPlaceholder(
                   'Final',
                   'Ganadores de semifinales',
@@ -710,7 +711,9 @@ function Eliminatorias({
                 </p>
             )}
 
-            <div className={`mt-6 grid gap-4 ${cupo === 16 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+            <div
+                className={`mt-6 grid gap-4 ${cupo === 16 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}
+            >
                 {cupo === 16 ? (
                     <BracketColumn
                         title="Cuartos de final"
@@ -777,7 +780,6 @@ function ResultadoModal({
                 onClose();
                 router.reload({
                     only: ['evento', 'grupos', 'partidos'],
-                    preserveScroll: true,
                 });
             },
         });

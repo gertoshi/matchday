@@ -49,10 +49,6 @@ class EquipoController extends Controller
         $datos = $request->validated();
 
         if ($request->hasFile('escudo_equipo')) {
-            if ($equipo->escudo_equipo) {
-                Storage::disk('public')->delete($equipo->escudo_equipo);
-            }
-
             $datos['escudo_equipo'] = $request
                 ->file('escudo_equipo')
                 ->store('escudos', 'public');
@@ -101,6 +97,10 @@ class EquipoController extends Controller
             $datos['escudo_equipo'] = $request
                 ->file('escudo_equipo')
                 ->store('escudos', 'public');
+
+            if ($equipo->escudo_equipo) {
+                Storage::disk('public')->delete($equipo->escudo_equipo);
+            }
         }
 
         $equipo->update([

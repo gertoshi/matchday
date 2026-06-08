@@ -36,10 +36,6 @@ class PerfilUsuarioController extends Controller
         $datos = $request->validated();
 
         if ($request->hasFile('foto_perfil')) {
-            if ($perfil->foto_perfil) {
-                Storage::disk('public')->delete($perfil->foto_perfil);
-            }
-
             $datos['foto_perfil'] = $request
                 ->file('foto_perfil')
                 ->store('perfiles', 'public');
@@ -88,6 +84,10 @@ class PerfilUsuarioController extends Controller
             $datos['foto_perfil'] = $request
                 ->file('foto_perfil')
                 ->store('perfiles', 'public');
+
+            if ($perfil->foto_perfil) {
+                Storage::disk('public')->delete($perfil->foto_perfil);
+            }
         }
 
         $perfil->update([

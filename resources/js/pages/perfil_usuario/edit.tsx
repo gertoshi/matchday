@@ -34,13 +34,19 @@ export default function Edit({ perfil }: Props) {
 
             <div className="max-w-3xl">
                 <section className="app-card">
-                    <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="space-y-6"
+                        encType="multipart/form-data"
+                    >
                         {perfil.foto_perfil ? (
-                            <img
-                                src={storageUrl(perfil.foto_perfil) ?? ''}
-                                alt={`${perfil.nombre} ${perfil.apellido}`}
-                                className="h-24 w-24 rounded-3xl object-cover"
-                            />
+                            <div className="h-24 w-24 overflow-hidden rounded-3xl border border-gray-200">
+                                <img
+                                    src={storageUrl(perfil.foto_perfil) ?? ''}
+                                    alt={`${perfil.nombre} ${perfil.apellido}`}
+                                    className="h-full w-full object-cover object-center"
+                                />
+                            </div>
                         ) : null}
 
                         <div className="grid gap-6 md:grid-cols-2">
@@ -51,7 +57,9 @@ export default function Edit({ perfil }: Props) {
                                     <input
                                         type="text"
                                         value={data.nombre}
-                                        onChange={(e) => setData('nombre', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('nombre', e.target.value)
+                                        }
                                         className="app-input mt-2 w-full"
                                     />
                                 }
@@ -63,7 +71,9 @@ export default function Edit({ perfil }: Props) {
                                     <input
                                         type="text"
                                         value={data.apellido}
-                                        onChange={(e) => setData('apellido', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('apellido', e.target.value)
+                                        }
                                         className="app-input mt-2 w-full"
                                     />
                                 }
@@ -77,17 +87,19 @@ export default function Edit({ perfil }: Props) {
                                 <input
                                     type="file"
                                     accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                                    onChange={(e) => setData('foto_perfil', e.target.files?.[0] ?? null)}
+                                    onChange={(e) =>
+                                        setData(
+                                            'foto_perfil',
+                                            e.target.files?.[0] ?? null,
+                                        )
+                                    }
                                     className="app-input mt-2 w-full"
                                 />
                             }
                         />
 
                         <div className="flex justify-end gap-4 pt-4">
-                            <Link
-                                href="/perfil"
-                                className="btn-secondary"
-                            >
+                            <Link href="/perfil" className="btn-secondary">
                                 Cancelar
                             </Link>
                             <button

@@ -13,9 +13,23 @@ type Usuario = {
     birth_date: string | null;
     status: string;
     created_at: string;
-    perfil_usuario?: { nombre: string; apellido: string; foto_perfil?: string | null } | null;
-    equipo?: { id: number; nombre_equipo: string; estado_equipo: string; jugadores?: unknown[] } | null;
-    eventos?: { id: number; nombre_evento: string; estado_evento: string; fecha_inicio: string | null }[];
+    perfil_usuario?: {
+        nombre: string;
+        apellido: string;
+        foto_perfil?: string | null;
+    } | null;
+    equipo?: {
+        id: number;
+        nombre_equipo: string;
+        estado_equipo: string;
+        jugadores?: unknown[];
+    } | null;
+    eventos?: {
+        id: number;
+        nombre_evento: string;
+        estado_evento: string;
+        fecha_inicio: string | null;
+    }[];
     sanciones?: {
         id: number;
         tipo: string;
@@ -36,7 +50,11 @@ export default function DetalleUsuario({ usuario }: Props) {
     const [modal, setModal] = useState<'suspender' | 'banear' | null>(null);
 
     function reactivar() {
-        router.post(`/admin/usuarios/${usuario.id}/reactivar`, {}, { preserveScroll: true });
+        router.post(
+            `/admin/usuarios/${usuario.id}/reactivar`,
+            {},
+            { preserveScroll: true },
+        );
     }
 
     return (
@@ -50,19 +68,35 @@ export default function DetalleUsuario({ usuario }: Props) {
                             <Avatar usuario={usuario} />
                             <div>
                                 <StatusBadge value={usuario.status} />
-                                <h1 className="mt-3 text-3xl font-bold text-gray-900">{usuario.name}</h1>
-                                <p className="mt-1 text-gray-500">{usuario.email}</p>
+                                <h1 className="mt-3 text-3xl font-bold text-gray-900">
+                                    {usuario.name}
+                                </h1>
+                                <p className="mt-1 text-gray-500">
+                                    {usuario.email}
+                                </p>
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-3">
-                            <button type="button" onClick={() => setModal('suspender')} className="btn-secondary">
+                            <button
+                                type="button"
+                                onClick={() => setModal('suspender')}
+                                className="btn-secondary"
+                            >
                                 Suspender usuario
                             </button>
-                            <button type="button" onClick={() => setModal('banear')} className="btn-danger">
+                            <button
+                                type="button"
+                                onClick={() => setModal('banear')}
+                                className="btn-danger"
+                            >
                                 <ShieldBan className="h-5 w-5" />
                                 Banear usuario
                             </button>
-                            <button type="button" onClick={reactivar} className="btn-blue">
+                            <button
+                                type="button"
+                                onClick={reactivar}
+                                className="btn-blue"
+                            >
                                 <Undo2 className="h-5 w-5" />
                                 Reactivar usuario
                             </button>
@@ -72,27 +106,60 @@ export default function DetalleUsuario({ usuario }: Props) {
 
                 <div className="grid gap-6 xl:grid-cols-2">
                     <InfoCard title="Información personal">
-                        <InfoRow label="Teléfono" value={usuario.phone ?? 'Sin teléfono'} />
-                        <InfoRow label="Fecha de nacimiento" value={usuario.birth_date ? formatDate(usuario.birth_date) : 'Sin fecha'} />
-                        <InfoRow label="Registro" value={formatDate(usuario.created_at)} />
+                        <InfoRow
+                            label="Teléfono"
+                            value={usuario.phone ?? 'Sin teléfono'}
+                        />
+                        <InfoRow
+                            label="Fecha de nacimiento"
+                            value={
+                                usuario.birth_date
+                                    ? formatDate(usuario.birth_date)
+                                    : 'Sin fecha'
+                            }
+                        />
+                        <InfoRow
+                            label="Registro"
+                            value={formatDate(usuario.created_at)}
+                        />
                         <InfoRow
                             label="Perfil"
-                            value={usuario.perfil_usuario ? `${usuario.perfil_usuario.nombre} ${usuario.perfil_usuario.apellido}` : 'Sin perfil'}
+                            value={
+                                usuario.perfil_usuario
+                                    ? `${usuario.perfil_usuario.nombre} ${usuario.perfil_usuario.apellido}`
+                                    : 'Sin perfil'
+                            }
                         />
                     </InfoCard>
 
                     <InfoCard title="Equipo asociado">
                         {usuario.equipo ? (
                             <>
-                                <InfoRow label="Equipo" value={usuario.equipo.nombre_equipo} />
-                                <InfoRow label="Estado" value={usuario.equipo.estado_equipo} />
-                                <InfoRow label="Jugadores" value={String(usuario.equipo.jugadores?.length ?? 0)} />
-                                <Link href={`/admin/equipos/${usuario.equipo.id}`} className="btn-secondary mt-4">
+                                <InfoRow
+                                    label="Equipo"
+                                    value={usuario.equipo.nombre_equipo}
+                                />
+                                <InfoRow
+                                    label="Estado"
+                                    value={usuario.equipo.estado_equipo}
+                                />
+                                <InfoRow
+                                    label="Jugadores"
+                                    value={String(
+                                        usuario.equipo.jugadores?.length ?? 0,
+                                    )}
+                                />
+                                <Link
+                                    href={`/admin/equipos/${usuario.equipo.id}`}
+                                    className="btn-secondary mt-4"
+                                >
                                     Ver equipo
                                 </Link>
                             </>
                         ) : (
-                            <p className="text-gray-500">Este usuario todavía no tiene equipo.</p>
+                            <p className="text-gray-500">
+                                Este usuario todavía no tiene equipo.
+                            </p>
                         )}
                     </InfoCard>
                 </div>
@@ -104,14 +171,26 @@ export default function DetalleUsuario({ usuario }: Props) {
                             <tbody>
                                 {(usuario.eventos ?? []).map((evento) => (
                                     <tr key={evento.id}>
-                                        <td className="px-5 py-4 font-semibold text-gray-900">{evento.nombre_evento}</td>
-                                        <td className="px-5 py-4">{evento.estado_evento}</td>
-                                        <td className="px-5 py-4">{evento.fecha_inicio ? formatDate(evento.fecha_inicio) : 'Sin fecha'}</td>
+                                        <td className="px-5 py-4 font-semibold text-gray-900">
+                                            {evento.nombre_evento}
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            {evento.estado_evento}
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            {evento.fecha_inicio
+                                                ? formatDate(
+                                                      evento.fecha_inicio,
+                                                  )
+                                                : 'Sin fecha'}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                        {(usuario.eventos ?? []).length === 0 ? <Empty text="No registra torneos creados." /> : null}
+                        {(usuario.eventos ?? []).length === 0 ? (
+                            <Empty text="No registra torneos creados." />
+                        ) : null}
                     </div>
                 </section>
 
@@ -122,15 +201,28 @@ export default function DetalleUsuario({ usuario }: Props) {
                             <tbody>
                                 {(usuario.sanciones ?? []).map((sancion) => (
                                     <tr key={sancion.id}>
-                                        <td className="px-5 py-4 font-semibold text-gray-900">{sancion.tipo}</td>
-                                        <td className="px-5 py-4">{sancion.motivo}</td>
-                                        <td className="px-5 py-4">{sancion.duracion_dias ? `${sancion.duracion_dias} días` : 'Indefinida'}</td>
-                                        <td className="px-5 py-4">{sancion.admin?.name ?? 'Admin eliminado'}</td>
+                                        <td className="px-5 py-4 font-semibold text-gray-900">
+                                            {sancion.tipo}
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            {sancion.motivo}
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            {sancion.duracion_dias
+                                                ? `${sancion.duracion_dias} días`
+                                                : 'Indefinida'}
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            {sancion.admin?.name ??
+                                                'Admin eliminado'}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                        {(usuario.sanciones ?? []).length === 0 ? <Empty text="No hay sanciones registradas." /> : null}
+                        {(usuario.sanciones ?? []).length === 0 ? (
+                            <Empty text="No hay sanciones registradas." />
+                        ) : null}
                     </div>
                 </section>
             </div>
@@ -153,12 +245,26 @@ function Avatar({ usuario }: { usuario: Usuario }) {
 
     return (
         <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-emerald-100 text-3xl font-bold text-emerald-700">
-            {foto ? <img src={storageUrl(foto) ?? ''} alt={usuario.name} className="h-full w-full object-cover" /> : usuario.name.charAt(0)}
+            {foto ? (
+                <img
+                    src={storageUrl(foto) ?? ''}
+                    alt={usuario.name}
+                    className="h-full w-full object-cover object-center"
+                />
+            ) : (
+                usuario.name.charAt(0)
+            )}
         </div>
     );
 }
 
-function InfoCard({ title, children }: { title: string; children: React.ReactNode }) {
+function InfoCard({
+    title,
+    children,
+}: {
+    title: string;
+    children: React.ReactNode;
+}) {
     return (
         <section className="app-card">
             <h2 className="section-title">{title}</h2>
@@ -170,14 +276,20 @@ function InfoCard({ title, children }: { title: string; children: React.ReactNod
 function InfoRow({ label, value }: { label: string; value: string }) {
     return (
         <div className="rounded-2xl bg-gray-50 p-4">
-            <p className="text-xs font-medium uppercase text-gray-500">{label}</p>
+            <p className="text-xs font-medium text-gray-500 uppercase">
+                {label}
+            </p>
             <p className="mt-2 font-semibold text-gray-900">{value}</p>
         </div>
     );
 }
 
 function Empty({ text }: { text: string }) {
-    return <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-center text-gray-500">{text}</div>;
+    return (
+        <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-center text-gray-500">
+            {text}
+        </div>
+    );
 }
 
 function StatusBadge({ value }: { value: string }) {
@@ -188,7 +300,13 @@ function StatusBadge({ value }: { value: string }) {
         eliminado: 'bg-slate-200 text-slate-700',
     };
 
-    return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${classes[value] ?? classes.eliminado}`}>{value}</span>;
+    return (
+        <span
+            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${classes[value] ?? classes.eliminado}`}
+        >
+            {value}
+        </span>
+    );
 }
 
 function formatDate(value: string) {

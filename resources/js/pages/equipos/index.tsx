@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AppShell from '@/components/layout/AppShell';
 import { storageUrl } from '@/lib/storage';
-import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Plus, Shield, Trash2 } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 
 type Jugador = {
@@ -30,7 +30,9 @@ export default function Index({ equipos }: Props) {
     const equipo = equipos?.[0] ?? null;
     const jugadoresCount = equipo?.jugadores?.length ?? 0;
     const plantillaCompleta = jugadoresCount >= 10;
-    const [selectedJugador, setSelectedJugador] = useState<Jugador | null>(null);
+    const [selectedJugador, setSelectedJugador] = useState<Jugador | null>(
+        null,
+    );
     const [editingJugador, setEditingJugador] = useState<Jugador | null>(null);
     const [editData, setEditData] = useState({
         nombre_jugador: '',
@@ -107,7 +109,8 @@ export default function Index({ equipos }: Props) {
                         </h2>
 
                         <p className="mx-auto mt-3 max-w-md text-gray-500">
-                            Creá tu equipo para agregar jugadores e inscribirte en torneos disponibles.
+                            Creá tu equipo para agregar jugadores e inscribirte
+                            en torneos disponibles.
                         </p>
 
                         <Link
@@ -122,15 +125,19 @@ export default function Index({ equipos }: Props) {
                     <div className="space-y-6">
                         <section className="app-card">
                             <div className="flex flex-col items-start gap-6 lg:flex-row lg:items-center">
-                                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-[#d1fae5] text-3xl font-bold text-[#065f46]">
+                                <div className="flex h-36 w-36 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-emerald-100 bg-emerald-50 text-[#065f46]">
                                     {equipo.escudo_equipo ? (
                                         <img
-                                            src={storageUrl(equipo.escudo_equipo) ?? ''}
+                                            src={
+                                                storageUrl(
+                                                    equipo.escudo_equipo,
+                                                ) ?? ''
+                                            }
                                             alt={equipo.nombre_equipo}
-                                            className="h-full w-full rounded-3xl object-cover"
+                                            className="h-full w-full object-cover object-center"
                                         />
                                     ) : (
-                                        equipo.nombre_equipo.charAt(0)
+                                        <Shield className="h-16 w-16 text-emerald-700" />
                                     )}
                                 </div>
 
@@ -138,16 +145,18 @@ export default function Index({ equipos }: Props) {
                                     <p className="text-sm font-medium text-[#10b981]">
                                         Equipo registrado
                                     </p>
-                                    <p className="mt-1 break-words text-3xl font-bold text-gray-900">
+                                    <p className="mt-1 text-3xl font-bold break-words text-gray-900">
                                         {equipo.nombre_equipo}
                                     </p>
 
                                     <p className="mt-2 text-gray-500">
-                                        Plantilla actual: {jugadoresCount} jugadores
+                                        Plantilla actual: {jugadoresCount}{' '}
+                                        jugadores
                                     </p>
                                     {plantillaCompleta && (
                                         <p className="mt-2 text-sm font-medium text-emerald-700">
-                                            Plantilla completa: máximo 10 jugadores
+                                            Plantilla completa: máximo 10
+                                            jugadores
                                         </p>
                                     )}
                                 </div>
@@ -199,10 +208,12 @@ export default function Index({ equipos }: Props) {
                                 )}
                             </div>
 
-                            {!equipo.jugadores || equipo.jugadores.length === 0 ? (
+                            {!equipo.jugadores ||
+                            equipo.jugadores.length === 0 ? (
                                 <div className="mt-6 rounded-2xl border border-dashed border-gray-300 p-6 text-center">
                                     <p className="text-gray-500">
-                                        Todavía no agregaste jugadores a este equipo.
+                                        Todavía no agregaste jugadores a este
+                                        equipo.
                                     </p>
                                 </div>
                             ) : (
@@ -211,68 +222,111 @@ export default function Index({ equipos }: Props) {
                                         <table className="app-table min-w-full divide-y divide-gray-200">
                                             <thead>
                                                 <tr>
-                                                    <th className="px-5 py-4">Número</th>
-                                                    <th className="px-5 py-4">Nombre</th>
-                                                    <th className="px-5 py-4">Apellido</th>
-                                                    <th className="px-5 py-4">Contacto</th>
-                                                    <th className="px-5 py-4">Sexo</th>
-                                                    <th className="px-5 py-4">Posición</th>
-                                                    <th className="px-5 py-4">Acciones</th>
+                                                    <th className="px-5 py-4">
+                                                        Número
+                                                    </th>
+                                                    <th className="px-5 py-4">
+                                                        Nombre
+                                                    </th>
+                                                    <th className="px-5 py-4">
+                                                        Apellido
+                                                    </th>
+                                                    <th className="px-5 py-4">
+                                                        Contacto
+                                                    </th>
+                                                    <th className="px-5 py-4">
+                                                        Sexo
+                                                    </th>
+                                                    <th className="px-5 py-4">
+                                                        Posición
+                                                    </th>
+                                                    <th className="px-5 py-4">
+                                                        Acciones
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100 bg-white">
-                                                {equipo.jugadores.map((jugador) => (
-                                                    <tr key={jugador.id} className="text-sm text-gray-700">
-                                                        <td className="px-5 py-4 font-semibold text-gray-900">
-                                                            #{jugador.numero_jugador}
-                                                        </td>
-                                                        <td className="px-5 py-4">
-                                                            {jugador.nombre_jugador}
-                                                        </td>
-                                                        <td className="px-5 py-4">
-                                                            {jugador.apellido_jugador}
-                                                        </td>
-                                                        <td className="px-5 py-4 text-gray-500">
-                                                            {jugador.contacto_jugador || 'Sin contacto'}
-                                                        </td>
-                                                        <td className="px-5 py-4">
-                                                            {jugador.sexo_jugador}
-                                                        </td>
-                                                        <td className="px-5 py-4">
-                                                            <span className="badge-position">
-                                                                {jugador.posicion_jugador}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-5 py-4">
-                                                            <div className="flex flex-wrap items-center gap-2">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setSelectedJugador(jugador)}
-                                                                    className="btn-blue px-3 py-2"
-                                                                >
-                                                                    <Eye className="h-4 w-4" />
-                                                                    Ver
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => openEditModal(jugador)}
-                                                                    className="btn-primary px-3 py-2"
-                                                                >
-                                                                    <Pencil className="h-4 w-4" />
-                                                                    Editar
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleDelete(jugador.id)}
-                                                                    className="btn-danger px-3 py-2"
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                    Eliminar
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                {equipo.jugadores.map(
+                                                    (jugador) => (
+                                                        <tr
+                                                            key={jugador.id}
+                                                            className="text-sm text-gray-700"
+                                                        >
+                                                            <td className="px-5 py-4 font-semibold text-gray-900">
+                                                                #
+                                                                {
+                                                                    jugador.numero_jugador
+                                                                }
+                                                            </td>
+                                                            <td className="px-5 py-4">
+                                                                {
+                                                                    jugador.nombre_jugador
+                                                                }
+                                                            </td>
+                                                            <td className="px-5 py-4">
+                                                                {
+                                                                    jugador.apellido_jugador
+                                                                }
+                                                            </td>
+                                                            <td className="px-5 py-4 text-gray-500">
+                                                                {jugador.contacto_jugador ||
+                                                                    'Sin contacto'}
+                                                            </td>
+                                                            <td className="px-5 py-4">
+                                                                {
+                                                                    jugador.sexo_jugador
+                                                                }
+                                                            </td>
+                                                            <td className="px-5 py-4">
+                                                                <span className="badge-position">
+                                                                    {
+                                                                        jugador.posicion_jugador
+                                                                    }
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-5 py-4">
+                                                                <div className="flex flex-wrap items-center gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            setSelectedJugador(
+                                                                                jugador,
+                                                                            )
+                                                                        }
+                                                                        className="btn-blue px-3 py-2"
+                                                                    >
+                                                                        <Eye className="h-4 w-4" />
+                                                                        Ver
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            openEditModal(
+                                                                                jugador,
+                                                                            )
+                                                                        }
+                                                                        className="btn-primary px-3 py-2"
+                                                                    >
+                                                                        <Pencil className="h-4 w-4" />
+                                                                        Editar
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            handleDelete(
+                                                                                jugador.id,
+                                                                            )
+                                                                        }
+                                                                        className="btn-danger px-3 py-2"
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                        Eliminar
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ),
+                                                )}
                                             </tbody>
                                         </table>
                                     </div>
@@ -292,7 +346,8 @@ export default function Index({ equipos }: Props) {
                                     Detalle del jugador
                                 </p>
                                 <h3 className="mt-1 text-2xl font-bold text-gray-900">
-                                    {selectedJugador.nombre_jugador} {selectedJugador.apellido_jugador}
+                                    {selectedJugador.nombre_jugador}{' '}
+                                    {selectedJugador.apellido_jugador}
                                 </h3>
                             </div>
 
@@ -306,15 +361,33 @@ export default function Index({ equipos }: Props) {
                         </div>
 
                         <div className="mt-8 grid gap-4 md:grid-cols-2">
-                            <InfoCard label="Número" value={`#${selectedJugador.numero_jugador}`} />
-                            <InfoCard label="Nombre" value={selectedJugador.nombre_jugador} />
-                            <InfoCard label="Apellido" value={selectedJugador.apellido_jugador} />
+                            <InfoCard
+                                label="Número"
+                                value={`#${selectedJugador.numero_jugador}`}
+                            />
+                            <InfoCard
+                                label="Nombre"
+                                value={selectedJugador.nombre_jugador}
+                            />
+                            <InfoCard
+                                label="Apellido"
+                                value={selectedJugador.apellido_jugador}
+                            />
                             <InfoCard
                                 label="Contacto"
-                                value={selectedJugador.contacto_jugador || 'Sin contacto'}
+                                value={
+                                    selectedJugador.contacto_jugador ||
+                                    'Sin contacto'
+                                }
                             />
-                            <InfoCard label="Posición" value={selectedJugador.posicion_jugador} />
-                            <InfoCard label="Sexo" value={selectedJugador.sexo_jugador} />
+                            <InfoCard
+                                label="Posición"
+                                value={selectedJugador.posicion_jugador}
+                            />
+                            <InfoCard
+                                label="Sexo"
+                                value={selectedJugador.sexo_jugador}
+                            />
                         </div>
                     </div>
                 </div>
@@ -329,7 +402,9 @@ export default function Index({ equipos }: Props) {
                                     Editar jugador
                                 </p>
                                 <h3 className="mt-1 text-2xl font-bold text-gray-900">
-                                    #{editingJugador.numero_jugador} {editingJugador.nombre_jugador} {editingJugador.apellido_jugador}
+                                    #{editingJugador.numero_jugador}{' '}
+                                    {editingJugador.nombre_jugador}{' '}
+                                    {editingJugador.apellido_jugador}
                                 </h3>
                             </div>
 
@@ -342,7 +417,10 @@ export default function Index({ equipos }: Props) {
                             </button>
                         </div>
 
-                        <form onSubmit={handleUpdate} className="mt-8 space-y-6">
+                        <form
+                            onSubmit={handleUpdate}
+                            className="mt-8 space-y-6"
+                        >
                             <div className="grid gap-6 md:grid-cols-2">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">
@@ -371,7 +449,8 @@ export default function Index({ equipos }: Props) {
                                         onChange={(e) =>
                                             setEditData((current) => ({
                                                 ...current,
-                                                apellido_jugador: e.target.value,
+                                                apellido_jugador:
+                                                    e.target.value,
                                             }))
                                         }
                                         className="app-input mt-2 w-full"
@@ -406,15 +485,22 @@ export default function Index({ equipos }: Props) {
                                         onChange={(e) =>
                                             setEditData((current) => ({
                                                 ...current,
-                                                posicion_jugador: e.target.value,
+                                                posicion_jugador:
+                                                    e.target.value,
                                             }))
                                         }
                                         className="app-select mt-2 w-full"
                                     >
                                         <option value="arquero">Arquero</option>
-                                        <option value="defensor">Defensor</option>
-                                        <option value="mediocampista">Mediocampista</option>
-                                        <option value="delantero">Delantero</option>
+                                        <option value="defensor">
+                                            Defensor
+                                        </option>
+                                        <option value="mediocampista">
+                                            Mediocampista
+                                        </option>
+                                        <option value="delantero">
+                                            Delantero
+                                        </option>
                                     </select>
                                 </div>
 
@@ -430,7 +516,9 @@ export default function Index({ equipos }: Props) {
                                         onChange={(e) =>
                                             setEditData((current) => ({
                                                 ...current,
-                                                numero_jugador: Number(e.target.value),
+                                                numero_jugador: Number(
+                                                    e.target.value,
+                                                ),
                                             }))
                                         }
                                         className="app-input mt-2 w-full"
@@ -451,8 +539,12 @@ export default function Index({ equipos }: Props) {
                                         }
                                         className="app-select mt-2 w-full"
                                     >
-                                        <option value="masculino">Masculino</option>
-                                        <option value="femenino">Femenino</option>
+                                        <option value="masculino">
+                                            Masculino
+                                        </option>
+                                        <option value="femenino">
+                                            Femenino
+                                        </option>
                                     </select>
                                 </div>
                             </div>
@@ -491,7 +583,7 @@ type InfoCardProps = {
 function InfoCard({ label, value }: InfoCardProps) {
     return (
         <div className="rounded-2xl bg-gray-50 p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
                 {label}
             </p>
             <p className="mt-2 text-lg font-semibold text-gray-900">{value}</p>
