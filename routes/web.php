@@ -29,7 +29,7 @@ Route::inertia('/', 'landing')->name('home');
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'sanction'])->group(function () {
 
     Route::get(
         'dashboard',
@@ -38,7 +38,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 });
 
-Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'verified', 'sanction', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/usuarios', [AdminUsuarioController::class, 'index'])->name('usuarios.index');
@@ -69,7 +69,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'sanction'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------

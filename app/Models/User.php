@@ -53,6 +53,50 @@ class User extends Authenticatable
         return $this->hasMany(Sancion::class);
     }
 
+    public function isAdmin(): bool
+    {
+        return (bool) $this->is_admin;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === 'activo';
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->status === 'suspendido'
+            || $this->sancionActiva()?->tipo === 'suspension';
+    }
+
+    public function isBanned(): bool
+    {
+        return in_array($this->status, ['bloqueado', 'eliminado'], true)
+            || $this->sancionActiva()?->tipo === 'baneo';
+    }
+
+    public function sancionActiva(): ?Sancion
+    {
+        return $this->sanciones()
+            ->where(function ($query): void {
+                $query->where(function ($query): void {
+                    $query->where('tipo', 'suspension')
+                        ->where(function ($query): void {
+                            $query->whereNull('fecha_fin')
+                                ->orWhere('fecha_fin', '>=', now());
+                        });
+                })->orWhere(function ($query): void {
+                    $query->where('tipo', 'baneo')
+                        ->where(function ($query): void {
+                            $query->whereNull('fecha_fin')
+                                ->orWhere('fecha_fin', '>=', now());
+                        });
+                });
+            })
+            ->latest()
+            ->first();
+    }
+
     protected function casts(): array
     {
         return [

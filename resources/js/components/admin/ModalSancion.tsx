@@ -34,7 +34,10 @@ export default function ModalSancion({
             `/admin/usuarios/${userId}/${tipo}`,
             {
                 motivo,
-                duracion_dias: tipo === 'suspender' ? Number(duracionDias) : null,
+                duracion_dias:
+                    tipo === 'suspender' && duracionDias
+                        ? Number(duracionDias)
+                        : null,
                 comentarios,
             },
             {
@@ -85,7 +88,6 @@ export default function ModalSancion({
                                 value={duracionDias}
                                 onChange={(event) => setDuracionDias(event.target.value)}
                                 className="app-input"
-                                required
                             />
                         </label>
                     ) : null}

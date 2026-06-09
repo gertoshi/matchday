@@ -68,6 +68,10 @@ class AdminUsuarioController extends Controller
 
         $user->update($data);
 
+        if ($user->isActive()) {
+            $this->cerrarSancionesActivas($user);
+        }
+
         return back()->with('success', 'Usuario actualizado.');
     }
 
@@ -97,6 +101,7 @@ class AdminUsuarioController extends Controller
     {
         $this->ensureNotSelf($request, $user);
         $user->update(['status' => 'activo']);
+        $this->cerrarSancionesActivas($user);
 
         return back()->with('success', 'Usuario reactivado.');
     }
@@ -116,7 +121,7 @@ class AdminUsuarioController extends Controller
     {
         return $request->validate([
             'motivo' => ['required', 'string', 'max:255'],
-            'duracion_dias' => [$baneo ? 'nullable' : 'required', 'integer', 'min:1', 'max:3650'],
+            'duracion_dias' => ['nullable', 'integer', 'min:1', 'max:3650'],
             'comentarios' => ['nullable', 'string'],
         ]);
     }
@@ -144,5 +149,15 @@ class AdminUsuarioController extends Controller
     private function ensureNotSelf(Request $request, User $user): void
     {
         abort_if($request->user()?->is($user), 422, 'No podés aplicar esta acción sobre tu propio usuario.');
+    }
+
+    private function cerrarSancionesActivas(User $user): void
+    {
+        $user->sanciones()
+            ->where(function ($query): void {
+                $query->whereNull('fecha_fin')
+                    ->orWhere('fecha_fin', '>=', now());
+            })
+            ->update(['fecha_fin' => now()]);
     }
 }

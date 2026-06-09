@@ -35,11 +35,25 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $sancionActiva = $request->user()?->sancionActiva();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                'sancion_activa' => $sancionActiva ? [
+                    'tipo' => $sancionActiva->tipo,
+                    'motivo' => $sancionActiva->motivo,
+                    'comentarios' => $sancionActiva->comentarios,
+                    'fecha_inicio' => optional($sancionActiva->fecha_inicio)->format('Y-m-d'),
+                    'fecha_fin' => optional($sancionActiva->fecha_fin)->format('Y-m-d'),
+                ] : null,
+            ],
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+                'warning' => fn () => $request->session()->get('warning'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

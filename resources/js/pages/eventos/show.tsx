@@ -17,13 +17,6 @@ type Inscripcion = {
     } | null;
 };
 
-type Partido = {
-    id: number;
-    fecha_hora: string;
-    ubicacion_partido: string;
-    categoria_partido: string;
-};
-
 type Evento = {
     id: number;
     nombre_evento: string;
@@ -41,7 +34,6 @@ type Evento = {
     can_generate_fixture: boolean;
     user: EventoUser;
     inscripciones: Inscripcion[];
-    partidos: Partido[];
     can_manage: boolean;
 };
 
@@ -179,108 +171,80 @@ export default function Show({ evento, hasEquipo }: Props) {
                     </div>
                 </section>
 
-                <div className="grid gap-6 xl:grid-cols-2">
-                    <section className="app-card">
-                        <h2 className="text-2xl font-bold text-gray-900">
-                            Equipos inscriptos
-                        </h2>
-                        <p className="mt-2 text-gray-500">
-                            Equipos anotados actualmente en el torneo.
-                        </p>
-
-                        {evento.inscripciones.length === 0 ? (
-                            <p className="mt-6 text-sm text-gray-500">
-                                Todavía no hay inscripciones registradas.
+                <section className="app-card">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-900">
+                                Equipos inscriptos
+                            </h2>
+                            <p className="mt-2 text-gray-500">
+                                Equipos anotados actualmente en el torneo.
                             </p>
-                        ) : (
-                            <div className="mt-6 space-y-3">
-                                {evento.inscripciones.map((inscripcion) => (
-                                    <div
-                                        key={inscripcion.id}
-                                        className="rounded-2xl border border-gray-200 p-4 transition-all duration-200 ease-in-out hover:shadow-sm"
-                                    >
-                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                            <TeamBadge
-                                                equipo={inscripcion.equipo}
+                        </div>
+                        <span className="w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
+                            {evento.inscripciones.length} equipos
+                        </span>
+                    </div>
+
+                    {evento.inscripciones.length === 0 ? (
+                        <p className="mt-6 rounded-3xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
+                            Todavía no hay inscripciones registradas.
+                        </p>
+                    ) : (
+                        <div className="mt-6 grid gap-3 lg:grid-cols-2">
+                            {evento.inscripciones.map((inscripcion) => (
+                                <div
+                                    key={inscripcion.id}
+                                    className="rounded-3xl border border-gray-200 bg-white p-4 transition-all duration-200 ease-in-out hover:border-emerald-100 hover:shadow-sm"
+                                >
+                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                        <TeamBadge
+                                            equipo={inscripcion.equipo}
+                                            size="lg"
+                                        />
+                                        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                                            <EstadoInscripcionBadge
+                                                estado={
+                                                    inscripcion.estado_inscripcion
+                                                }
                                             />
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <EstadoInscripcionBadge
-                                                    estado={
-                                                        inscripcion.estado_inscripcion
-                                                    }
-                                                />
-                                                {evento.can_manage &&
-                                                inscripcion.estado_inscripcion ===
-                                                    'pendiente' ? (
-                                                    <>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                cambiarEstadoInscripcion(
-                                                                    inscripcion.id,
-                                                                    'aceptar',
-                                                                )
-                                                            }
-                                                            className="btn-primary py-2 text-sm"
-                                                        >
-                                                            Aceptar
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                cambiarEstadoInscripcion(
-                                                                    inscripcion.id,
-                                                                    'rechazar',
-                                                                )
-                                                            }
-                                                            className="btn-secondary py-2 text-sm"
-                                                        >
-                                                            Rechazar
-                                                        </button>
-                                                    </>
-                                                ) : null}
-                                            </div>
+                                            {evento.can_manage &&
+                                            inscripcion.estado_inscripcion ===
+                                                'pendiente' ? (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            cambiarEstadoInscripcion(
+                                                                inscripcion.id,
+                                                                'aceptar',
+                                                            )
+                                                        }
+                                                        className="btn-primary py-2 text-sm"
+                                                    >
+                                                        Aceptar
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            cambiarEstadoInscripcion(
+                                                                inscripcion.id,
+                                                                'rechazar',
+                                                            )
+                                                        }
+                                                        className="btn-secondary py-2 text-sm"
+                                                    >
+                                                        Rechazar
+                                                    </button>
+                                                </>
+                                            ) : null}
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        )}
-                    </section>
-
-                    <section className="app-card">
-                        <h2 className="text-2xl font-bold text-gray-900">
-                            Partidos
-                        </h2>
-                        <p className="mt-2 text-gray-500">
-                            Programación actual del torneo.
-                        </p>
-
-                        {evento.partidos.length === 0 ? (
-                            <p className="mt-6 text-sm text-gray-500">
-                                Todavía no hay partidos programados.
-                            </p>
-                        ) : (
-                            <div className="mt-6 space-y-3">
-                                {evento.partidos.map((partido) => (
-                                    <div
-                                        key={partido.id}
-                                        className="rounded-2xl border border-gray-200 p-4 transition-all duration-200 ease-in-out hover:shadow-sm"
-                                    >
-                                        <p className="font-semibold text-gray-900">
-                                            {partido.categoria_partido}
-                                        </p>
-                                        <p className="mt-1 text-sm text-gray-500">
-                                            {partido.ubicacion_partido}
-                                        </p>
-                                        <p className="mt-1 text-sm text-gray-500">
-                                            {partido.fecha_hora}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </section>
-                </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </section>
             </div>
         </AppShell>
     );
