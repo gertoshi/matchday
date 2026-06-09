@@ -22,7 +22,8 @@ test('organizer can generate fixture when tournament is full', function () {
 
     expect(FixtureGrupo::where('evento_id', $evento->id)->count())->toBe(2)
         ->and(FixtureGrupoEquipo::count())->toBe(8)
-        ->and(Partido::where('evento_id', $evento->id)->where('fase', 'grupo')->count())->toBe(12);
+        ->and(Partido::where('evento_id', $evento->id)->where('fase', 'grupo')->count())->toBe(12)
+        ->and($evento->fresh()->estado_evento)->toBe('en_curso');
 });
 
 test('fixture cannot be generated before cup is full', function () {
@@ -284,7 +285,8 @@ test('knockout results cannot be tied and final result determines champion', fun
 
     expect($final->estado_partido)->toBe('jugado')
         ->and($final->marcador_partido)->toBe('3 - 2')
-        ->and($final->ganador_partido)->toBe($final->equipoLocal->nombre_equipo);
+        ->and($final->ganador_partido)->toBe($final->equipoLocal->nombre_equipo)
+        ->and($evento->fresh()->estado_evento)->toBe('finalizado');
 });
 
 test('quarterfinals semifinals and final are generated for sixteen team tournament', function () {

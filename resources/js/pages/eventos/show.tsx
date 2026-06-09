@@ -22,7 +22,7 @@ type Evento = {
     nombre_evento: string;
     ubicacion_evento: string;
     cupo_evento: number;
-    estado_evento: 'abierto' | 'cerrado' | 'finalizado';
+    estado_evento: 'abierto' | 'en_curso' | 'finalizado';
     fecha_inicio: string;
     fecha_fin: string;
     descripcion_evento?: string | null;
@@ -40,6 +40,12 @@ type Evento = {
 type Props = {
     evento: Evento;
     hasEquipo: boolean;
+};
+
+const estadoEventoClasses: Record<Evento['estado_evento'], string> = {
+    abierto: 'bg-emerald-100 text-emerald-700',
+    en_curso: 'bg-blue-100 text-blue-700',
+    finalizado: 'bg-slate-200 text-slate-700',
 };
 
 export default function Show({ evento, hasEquipo }: Props) {
@@ -83,8 +89,8 @@ export default function Show({ evento, hasEquipo }: Props) {
                             </p>
                         </div>
 
-                        <span className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700">
-                            {evento.estado_evento}
+                        <span className={`rounded-full px-4 py-2 text-sm font-medium ${estadoEventoClasses[evento.estado_evento]}`}>
+                            {estadoEventoLabel(evento.estado_evento)}
                         </span>
                         <InscripcionBadge
                             tipo={evento.tipo_inscripcion}
@@ -314,6 +320,16 @@ function formatoLabel(formato: string) {
     };
 
     return formatos[formato] ?? formato;
+}
+
+function estadoEventoLabel(estado: Evento['estado_evento']) {
+    const estados: Record<Evento['estado_evento'], string> = {
+        abierto: 'Abierto',
+        en_curso: 'En curso',
+        finalizado: 'Finalizado',
+    };
+
+    return estados[estado];
 }
 
 function formatMoney(value?: string | null) {

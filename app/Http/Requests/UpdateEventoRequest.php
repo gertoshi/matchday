@@ -62,7 +62,7 @@ class UpdateEventoRequest extends FormRequest
 
             'estado_evento' => [
                 'required',
-                'in:abierto,cerrado,finalizado',
+                'in:abierto,en_curso,finalizado',
             ],
 
             'descripcion_evento' => [

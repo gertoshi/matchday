@@ -17,7 +17,7 @@ class AdminDashboardController extends Controller
         return Inertia::render('admin/dashboard', [
             'totalUsuarios' => User::count(),
             'equiposActivos' => Equipo::where('estado_equipo', 'activo')->count(),
-            'torneosActivos' => Evento::where('estado_evento', 'abierto')->count(),
+            'torneosActivos' => Evento::whereIn('estado_evento', ['abierto', 'en_curso'])->count(),
             'usuariosSuspendidos' => User::whereIn('status', ['suspendido', 'bloqueado'])->count(),
             'reportesPendientes' => Reporte::where('estado', 'pendiente')->count(),
             'usuariosRecientes' => User::query()

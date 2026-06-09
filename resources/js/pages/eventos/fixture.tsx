@@ -21,7 +21,7 @@ type Evento = {
     descripcion_evento?: string | null;
     ubicacion_evento: string;
     cupo_evento: number;
-    estado_evento: 'abierto' | 'cerrado' | 'finalizado';
+    estado_evento: 'abierto' | 'en_curso' | 'finalizado';
     fecha_inicio: string;
     fecha_fin: string;
     formato_evento: string;
@@ -102,6 +102,12 @@ const tabs: Array<{ id: Tab; label: string }> = [
     { id: 'eliminatorias', label: 'Eliminatorias' },
 ];
 
+const estadoEventoClasses: Record<Evento['estado_evento'], string> = {
+    abierto: 'bg-emerald-100 text-emerald-700',
+    en_curso: 'bg-blue-100 text-blue-700',
+    finalizado: 'bg-slate-200 text-slate-700',
+};
+
 export default function Fixture({ evento, grupos, partidos }: Props) {
     const [activeTab, setActiveTab] = useState<Tab>('informacion');
     const [selectedPartido, setSelectedPartido] = useState<Partido | null>(
@@ -164,7 +170,7 @@ export default function Fixture({ evento, grupos, partidos }: Props) {
                     <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <Metric
                             label="Estado"
-                            value={evento.estado_evento}
+                            value={estadoEventoLabel(evento.estado_evento)}
                             icon={<Trophy className="h-5 w-5" />}
                         />
                         <Metric
@@ -290,8 +296,8 @@ function Informacion({
                             {evento.nombre_evento}
                         </h2>
                     </div>
-                    <span className="w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
-                        {evento.estado_evento}
+                    <span className={`w-fit rounded-full px-4 py-2 text-sm font-semibold ${estadoEventoClasses[evento.estado_evento]}`}>
+                        {estadoEventoLabel(evento.estado_evento)}
                     </span>
                 </div>
 
@@ -330,7 +336,7 @@ function Informacion({
                             evento.monto_inscripcion,
                         )}
                     />
-                    <InfoBox label="Estado" value={evento.estado_evento} />
+                    <InfoBox label="Estado" value={estadoEventoLabel(evento.estado_evento)} />
                     <InfoBox label="Inicio" value={evento.fecha_inicio} />
                     <InfoBox label="Fin" value={evento.fecha_fin} />
                     <InfoBox
@@ -1071,6 +1077,16 @@ function formatoLabel(formato: string) {
     };
 
     return formatos[formato] ?? formato;
+}
+
+function estadoEventoLabel(estado: Evento['estado_evento']) {
+    const estados: Record<Evento['estado_evento'], string> = {
+        abierto: 'Abierto',
+        en_curso: 'En curso',
+        finalizado: 'Finalizado',
+    };
+
+    return estados[estado];
 }
 
 function formatMoney(value?: string | null) {

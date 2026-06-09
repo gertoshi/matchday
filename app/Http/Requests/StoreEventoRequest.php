@@ -62,7 +62,7 @@ class StoreEventoRequest extends FormRequest
 
             'estado_evento' => [
                 'nullable',
-                'in:abierto,cerrado,finalizado',
+                'in:abierto,en_curso,finalizado',
             ],
 
             'descripcion_evento' => [

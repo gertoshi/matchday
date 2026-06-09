@@ -20,7 +20,6 @@ type Props = {
 export default function Create({ eventoSeleccionado, eventos }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         evento_id: eventoSeleccionado?.id ? String(eventoSeleccionado.id) : '',
-        observaciones: '',
     });
 
     function handleSubmit(e: React.FormEvent) {
@@ -85,22 +84,6 @@ export default function Create({ eventoSeleccionado, eventos }: Props) {
                                 )}
                             </div>
                         )}
-
-                        <div>
-                            <label className="field-label">
-                                Observaciones
-                            </label>
-                            <textarea
-                                value={data.observaciones}
-                                onChange={(e) => setData('observaciones', e.target.value)}
-                                className="app-textarea mt-2 min-h-32 w-full"
-                            />
-                            {errors.observaciones && (
-                                <p className="mt-2 text-sm text-red-500">
-                                    {errors.observaciones}
-                                </p>
-                            )}
-                        </div>
 
                         <div className="flex justify-end gap-4 pt-4">
                             <Link

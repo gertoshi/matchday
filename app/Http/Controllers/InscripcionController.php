@@ -8,6 +8,7 @@ use App\Models\Evento;
 use App\Models\Inscripcion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Response;
 
 class InscripcionController extends Controller
@@ -39,6 +40,7 @@ class InscripcionController extends Controller
                 'evento' => $inscripcion->evento ? [
                     'id' => $inscripcion->evento->id,
                     'nombre_evento' => $inscripcion->evento->nombre_evento,
+                    'estado_evento' => $inscripcion->evento->estado_evento,
                 ] : null,
                 'equipo' => $inscripcion->equipo ? [
                     'id' => $inscripcion->equipo->id,
@@ -204,9 +206,47 @@ class InscripcionController extends Controller
     {
         $this->autorizarGestionInscripcion($inscripcion);
 
-        $inscripcion->update([
-            'estado_inscripcion' => 'confirmada',
-        ]);
+        $cupoCompleto = false;
+
+        DB::transaction(function () use ($inscripcion, &$cupoCompleto): void {
+            $inscripcion->refresh();
+
+            $evento = Evento::query()
+                ->whereKey($inscripcion->evento_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $confirmadas = Inscripcion::query()
+                ->where('evento_id', $evento->id)
+                ->where('estado_inscripcion', 'confirmada')
+                ->lockForUpdate()
+                ->count();
+
+            if ($inscripcion->estado_inscripcion !== 'confirmada' && $confirmadas >= $evento->cupo_evento) {
+                $cupoCompleto = true;
+
+                return;
+            }
+
+            $inscripcion->update([
+                'estado_inscripcion' => 'confirmada',
+            ]);
+
+            $confirmadasActualizadas = Inscripcion::query()
+                ->where('evento_id', $evento->id)
+                ->where('estado_inscripcion', 'confirmada')
+                ->count();
+
+            if ($confirmadasActualizadas >= $evento->cupo_evento) {
+                $evento->update([
+                    'estado_evento' => 'en_curso',
+                ]);
+            }
+        });
+
+        if ($cupoCompleto) {
+            return back()->with('error', 'El torneo ya completó su cupo.');
+        }
 
         return back()->with('success', 'Inscripción aceptada.');
     }

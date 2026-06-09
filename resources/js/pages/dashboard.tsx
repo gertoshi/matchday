@@ -38,7 +38,7 @@ type Props = {
 
 const estadoEventoClasses: Record<string, string> = {
     abierto: 'bg-emerald-100 text-emerald-700',
-    cerrado: 'bg-amber-100 text-amber-700',
+    en_curso: 'bg-blue-100 text-blue-700',
     finalizado: 'bg-slate-200 text-slate-700',
 };
 
@@ -139,7 +139,7 @@ export default function Dashboard({
                                         <span
                                             className={`rounded-full px-3 py-1 text-xs font-semibold ${estadoEventoClasses[evento.estado_evento] ?? 'bg-slate-200 text-slate-700'}`}
                                         >
-                                            {evento.estado_evento}
+                                            {estadoEventoLabel(evento.estado_evento)}
                                         </span>
                                     </div>
                                     <p className="mt-1 text-sm text-gray-600">
@@ -241,4 +241,14 @@ export default function Dashboard({
             </div>
         </AppShell>
     );
+}
+
+function estadoEventoLabel(estado: string) {
+    const estados: Record<string, string> = {
+        abierto: 'Abierto',
+        en_curso: 'En curso',
+        finalizado: 'Finalizado',
+    };
+
+    return estados[estado] ?? estado;
 }

@@ -38,6 +38,34 @@ test('admin can manage inscriptions for any tournament', function () {
     expect($inscripcion->fresh()->estado_inscripcion)->toBe('confirmada');
 });
 
+test('accepting the last available inscription moves tournament to in progress', function () {
+    $organizer = User::factory()->create();
+    $evento = createEventoGestion($organizer, ['cupo_evento' => 1]);
+    $inscripcion = createInscripcionGestion($evento);
+
+    $this->actingAs($organizer)
+        ->post(route('inscripciones.aceptar', $inscripcion))
+        ->assertRedirect();
+
+    expect($inscripcion->fresh()->estado_inscripcion)->toBe('confirmada')
+        ->and($evento->fresh()->estado_evento)->toBe('en_curso');
+});
+
+test('organizer cannot accept an inscription when tournament quota is full', function () {
+    $organizer = User::factory()->create();
+    $evento = createEventoGestion($organizer, ['cupo_evento' => 1]);
+
+    createInscripcionGestion($evento, ['estado_inscripcion' => 'confirmada']);
+    $pendiente = createInscripcionGestion($evento);
+
+    $this->actingAs($organizer)
+        ->post(route('inscripciones.aceptar', $pendiente))
+        ->assertRedirect()
+        ->assertSessionHas('error', 'El torneo ya completó su cupo.');
+
+    expect($pendiente->fresh()->estado_inscripcion)->toBe('pendiente');
+});
+
 test('normal users cannot manage inscriptions for another tournament', function () {
     $organizer = User::factory()->create();
     $user = User::factory()->create();
@@ -50,9 +78,9 @@ test('normal users cannot manage inscriptions for another tournament', function 
     expect($inscripcion->fresh()->estado_inscripcion)->toBe('pendiente');
 });
 
-function createEventoGestion(User $organizer): Evento
+function createEventoGestion(User $organizer, array $overrides = []): Evento
 {
-    return Evento::create([
+    return Evento::create(array_merge([
         'user_id' => $organizer->id,
         'nombre_evento' => 'Torneo Gestion',
         'ubicacion_evento' => 'Cancha Central',
@@ -64,10 +92,10 @@ function createEventoGestion(User $organizer): Evento
         'formato_evento' => 'futbol_5',
         'tipo_inscripcion' => 'gratis',
         'monto_inscripcion' => null,
-    ]);
+    ], $overrides));
 }
 
-function createInscripcionGestion(Evento $evento): Inscripcion
+function createInscripcionGestion(Evento $evento, array $overrides = []): Inscripcion
 {
     $user = User::factory()->create();
     $equipo = Equipo::create([
@@ -77,12 +105,12 @@ function createInscripcionGestion(Evento $evento): Inscripcion
         'estado_equipo' => 'activo',
     ]);
 
-    return Inscripcion::create([
+    return Inscripcion::create(array_merge([
         'evento_id' => $evento->id,
         'equipo_id' => $equipo->id,
         'fecha_inscripcion' => now(),
         'estado_inscripcion' => 'pendiente',
         'cuota_inscripcion' => 0,
         'cuota_pagada' => false,
-    ]);
+    ], $overrides));
 }

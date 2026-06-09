@@ -6,7 +6,7 @@ type Evento = {
     nombre_evento: string;
     ubicacion_evento: string;
     cupo_evento: number;
-    estado_evento: 'abierto' | 'cerrado' | 'finalizado';
+    estado_evento: 'abierto' | 'en_curso' | 'finalizado';
     fecha_inicio: string;
     fecha_fin: string;
     descripcion_evento?: string | null;
@@ -102,7 +102,7 @@ export default function Edit({ evento }: Props) {
                                         className="app-select mt-2 w-full"
                                     >
                                         <option value="abierto">Abierto</option>
-                                        <option value="cerrado">Cerrado</option>
+                                        <option value="en_curso">En curso</option>
                                         <option value="finalizado">Finalizado</option>
                                     </select>
                                 }

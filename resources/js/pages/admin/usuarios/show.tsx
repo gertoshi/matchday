@@ -175,7 +175,9 @@ export default function DetalleUsuario({ usuario }: Props) {
                                             {evento.nombre_evento}
                                         </td>
                                         <td className="px-5 py-4">
-                                            {evento.estado_evento}
+                                            {estadoEventoLabel(
+                                                evento.estado_evento,
+                                            )}
                                         </td>
                                         <td className="px-5 py-4">
                                             {evento.fecha_inicio
@@ -311,4 +313,14 @@ function StatusBadge({ value }: { value: string }) {
 
 function formatDate(value: string) {
     return new Intl.DateTimeFormat('es-AR').format(new Date(value));
+}
+
+function estadoEventoLabel(estado: string) {
+    const estados: Record<string, string> = {
+        abierto: 'Abierto',
+        en_curso: 'En curso',
+        finalizado: 'Finalizado',
+    };
+
+    return estados[estado] ?? estado;
 }

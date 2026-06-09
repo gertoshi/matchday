@@ -180,6 +180,7 @@ function StatusBadge({ value }: { value: string }) {
     const classes: Record<string, string> = {
         activo: 'bg-emerald-100 text-emerald-700',
         abierto: 'bg-emerald-100 text-emerald-700',
+        en_curso: 'bg-blue-100 text-blue-700',
         pendiente: 'bg-amber-100 text-amber-700',
         suspendido: 'bg-amber-100 text-amber-700',
         bloqueado: 'bg-red-100 text-red-700',
@@ -188,7 +189,17 @@ function StatusBadge({ value }: { value: string }) {
 
     return (
         <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${classes[value] ?? 'bg-slate-200 text-slate-700'}`}>
-            {value}
+            {statusLabel(value)}
         </span>
     );
+}
+
+function statusLabel(value: string) {
+    const labels: Record<string, string> = {
+        abierto: 'Abierto',
+        en_curso: 'En curso',
+        finalizado: 'Finalizado',
+    };
+
+    return labels[value] ?? value;
 }

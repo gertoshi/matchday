@@ -137,6 +137,11 @@ class FixtureController extends Controller
                 return;
             }
 
+            Evento::query()
+                ->whereKey($evento->id)
+                ->where('estado_evento', 'abierto')
+                ->update(['estado_evento' => 'en_curso']);
+
             $equipos = $evento->inscripciones()
                 ->with('equipo')
                 ->where('estado_inscripcion', 'confirmada')
@@ -236,6 +241,10 @@ class FixtureController extends Controller
 
             if ($partido->fase === 'semifinal') {
                 $this->generarFinalSiCorresponde($partido->evento);
+            }
+
+            if ($partido->fase === 'final') {
+                $this->finalizarEventoSiCorresponde($partido->evento);
             }
         });
 
@@ -503,6 +512,14 @@ class FixtureController extends Controller
             (int) $finalistas[0],
             (int) $finalistas[1],
         );
+    }
+
+    private function finalizarEventoSiCorresponde(Evento $evento): void
+    {
+        Evento::query()
+            ->whereKey($evento->id)
+            ->where('estado_evento', 'en_curso')
+            ->update(['estado_evento' => 'finalizado']);
     }
 
     private function crearPartidoEliminatorio(Evento $evento, string $fase, int $equipoLocalId, int $equipoVisitanteId): void
