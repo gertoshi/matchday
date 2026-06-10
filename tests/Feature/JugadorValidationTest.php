@@ -19,7 +19,9 @@ test('player shirt number must be between one and ten', function () {
 
     $this->actingAs($user)
         ->post(route('jugadores.store'), jugadorPayload(['numero_jugador' => 11]))
-        ->assertSessionHasErrors('numero_jugador');
+        ->assertSessionHasErrors([
+            'numero_jugador' => 'El campo número de camiseta debe estar entre 1 y 10.',
+        ]);
 });
 
 test('player shirt number cannot be duplicated in the same team', function () {

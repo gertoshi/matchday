@@ -107,6 +107,7 @@ class JugadorController extends Controller
                 ->pluck('numero_jugador')
                 ->map(fn (int $numero): int => $numero)
                 ->values(),
+            'numeroActual' => $jugador->numero_jugador,
         ]);
     }
 

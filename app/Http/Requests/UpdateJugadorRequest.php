@@ -48,8 +48,7 @@ class UpdateJugadorRequest extends FormRequest
             'numero_jugador' => [
                 'required',
                 'integer',
-                'min:1',
-                'max:10',
+                'between:1,10',
                 Rule::unique('jugadores', 'numero_jugador')
                     ->where('equipo_id', $equipoId)
                     ->ignore($jugadorId),

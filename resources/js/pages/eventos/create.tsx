@@ -15,9 +15,18 @@ export default function Create() {
     });
 
     const esPago = data.tipo_inscripcion === 'pago';
+    const today = formatDateInputValue(new Date());
+    const fechaFinAnterior =
+        data.fecha_inicio !== '' &&
+        data.fecha_fin !== '' &&
+        data.fecha_fin < data.fecha_inicio;
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        if (fechaFinAnterior) {
+            return;
+        }
+
         post('/eventos');
     }
 
@@ -80,7 +89,14 @@ export default function Create() {
                                     <input
                                         type="date"
                                         value={data.fecha_inicio}
-                                        onChange={(e) => setData('fecha_inicio', e.target.value)}
+                                        min={today}
+                                        onChange={(e) => {
+                                            const fechaInicio = e.target.value;
+                                            setData('fecha_inicio', fechaInicio);
+                                            if (data.fecha_fin && data.fecha_fin < fechaInicio) {
+                                                setData('fecha_fin', fechaInicio);
+                                            }
+                                        }}
                                         className="app-input mt-2 w-full"
                                     />
                                 }
@@ -92,12 +108,18 @@ export default function Create() {
                                     <input
                                         type="date"
                                         value={data.fecha_fin}
+                                        min={data.fecha_inicio || today}
                                         onChange={(e) => setData('fecha_fin', e.target.value)}
                                         className="app-input mt-2 w-full"
                                     />
                                 }
                             />
                         </div>
+                        {fechaFinAnterior && (
+                            <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+                                La fecha de fin no puede ser anterior a la fecha de inicio.
+                            </p>
+                        )}
 
                         <Field
                             label="Formato"
@@ -181,7 +203,7 @@ export default function Create() {
                             </Link>
                             <button
                                 type="submit"
-                                disabled={processing}
+                                disabled={processing || fechaFinAnterior}
                                 className="btn-primary disabled:opacity-50"
                             >
                                 Guardar torneo
@@ -213,3 +235,11 @@ function Field({
 }
 
 Create.layout = null;
+
+function formatDateInputValue(date: Date) {
+    const localDate = new Date(
+        date.getTime() - date.getTimezoneOffset() * 60_000,
+    );
+
+    return localDate.toISOString().slice(0, 10);
+}

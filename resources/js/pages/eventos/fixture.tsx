@@ -3,10 +3,12 @@ import AppShell from '@/components/layout/AppShell';
 import TeamBadge, {
     type TeamBadgeEquipo,
 } from '@/components/equipos/TeamBadge';
+import { storageUrl } from '@/lib/storage';
 import {
     CalendarDays,
     Medal,
     Pencil,
+    Shield,
     Shuffle,
     Swords,
     Table2,
@@ -606,8 +608,7 @@ function Eliminatorias({
     const cuartos = partidos.filter((partido) => partido.fase === 'cuartos');
     const finales = partidos.filter((partido) => partido.fase === 'final');
     const final = finales[0] ?? null;
-    const campeon =
-        final?.estado_partido === 'jugado' ? final.ganador_partido : null;
+    const campeonEquipo = obtenerCampeon(final);
     const partidosGrupoPendientes = partidos.some(
         (partido) =>
             partido.fase === 'grupo' && partido.estado_partido !== 'jugado',
@@ -743,27 +744,89 @@ function Eliminatorias({
                     canManage={canManage}
                     onEdit={onEdit}
                 />
-                <div>
-                    <p className="mb-3 text-center text-sm font-bold text-gray-500 uppercase">
-                        Campeón
-                    </p>
-                    <div className="rounded-3xl border border-gray-200 bg-white p-5 text-center shadow-sm">
-                        <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                            Campeón
-                        </span>
-                        <p className="mt-4 text-lg font-bold text-gray-900">
-                            {campeon ?? 'Pendiente'}
-                        </p>
-                        <p className="mt-2 text-sm text-gray-500">
-                            {campeon
-                                ? 'Torneo finalizado'
-                                : 'Se define al cargar el resultado de la final.'}
-                        </p>
-                    </div>
-                </div>
+                <ChampionCard campeon={campeonEquipo} final={final} />
             </div>
         </section>
     );
+}
+
+function ChampionCard({
+    campeon,
+    final,
+}: {
+    campeon: Equipo | null;
+    final: Partido | null;
+}) {
+    const escudo = storageUrl(campeon?.escudo_equipo);
+
+    return (
+        <div>
+            <p className="mb-3 text-center text-sm font-bold text-gray-500 uppercase">
+                Campeón
+            </p>
+            <div className="rounded-3xl border border-amber-200 bg-white p-6 text-center shadow-sm ring-1 ring-amber-100">
+                {campeon ? (
+                    <>
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                            <Trophy className="h-8 w-8" />
+                        </div>
+                        <div className="mx-auto mt-5 flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-emerald-100 bg-emerald-50 text-emerald-700">
+                            {escudo ? (
+                                <img
+                                    src={escudo}
+                                    alt={campeon.nombre_equipo}
+                                    className="h-full w-full object-cover object-center"
+                                />
+                            ) : (
+                                <Shield className="h-10 w-10" />
+                            )}
+                        </div>
+                        <p className="mt-5 text-sm font-bold text-amber-600 uppercase">
+                            ¡Campeón!
+                        </p>
+                        <h3 className="mt-2 text-2xl font-bold break-words text-gray-900">
+                            {campeon.nombre_equipo}
+                        </h3>
+                        <p className="mt-3 rounded-2xl bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-600">
+                            Final: {final?.marcador_partido ?? 'resultado cargado'}
+                        </p>
+                    </>
+                ) : (
+                    <>
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                            <Trophy className="h-8 w-8" />
+                        </div>
+                        <p className="mt-5 text-lg font-bold text-gray-900">
+                            Campeón pendiente
+                        </p>
+                        <p className="mt-2 text-sm text-gray-500">
+                            El campeón se definirá cuando se cargue el resultado de la final.
+                        </p>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function obtenerCampeon(final: Partido | null): Equipo | null {
+    if (
+        !final ||
+        final.estado_partido !== 'jugado' ||
+        !final.ganador_partido
+    ) {
+        return null;
+    }
+
+    if (final.equipo_local?.nombre_equipo === final.ganador_partido) {
+        return final.equipo_local;
+    }
+
+    if (final.equipo_visitante?.nombre_equipo === final.ganador_partido) {
+        return final.equipo_visitante;
+    }
+
+    return null;
 }
 
 function ResultadoModal({

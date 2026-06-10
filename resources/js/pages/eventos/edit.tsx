@@ -34,9 +34,17 @@ export default function Edit({ evento }: Props) {
     });
 
     const esPago = data.tipo_inscripcion === 'pago';
+    const fechaFinAnterior =
+        data.fecha_inicio !== '' &&
+        data.fecha_fin !== '' &&
+        data.fecha_fin < data.fecha_inicio;
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        if (fechaFinAnterior) {
+            return;
+        }
+
         put(`/eventos/${evento.id}`);
     }
 
@@ -114,7 +122,13 @@ export default function Edit({ evento }: Props) {
                                     <input
                                         type="date"
                                         value={data.fecha_inicio}
-                                        onChange={(e) => setData('fecha_inicio', e.target.value)}
+                                        onChange={(e) => {
+                                            const fechaInicio = e.target.value;
+                                            setData('fecha_inicio', fechaInicio);
+                                            if (data.fecha_fin && data.fecha_fin < fechaInicio) {
+                                                setData('fecha_fin', fechaInicio);
+                                            }
+                                        }}
                                         className="app-input mt-2 w-full"
                                     />
                                 }
@@ -126,12 +140,18 @@ export default function Edit({ evento }: Props) {
                                     <input
                                         type="date"
                                         value={data.fecha_fin}
+                                        min={data.fecha_inicio}
                                         onChange={(e) => setData('fecha_fin', e.target.value)}
                                         className="app-input mt-2 w-full"
                                     />
                                 }
                             />
                         </div>
+                        {fechaFinAnterior && (
+                            <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+                                La fecha de fin no puede ser anterior a la fecha de inicio.
+                            </p>
+                        )}
 
                         <Field
                             label="Formato"
@@ -215,7 +235,7 @@ export default function Edit({ evento }: Props) {
                             </Link>
                             <button
                                 type="submit"
-                                disabled={processing}
+                                disabled={processing || fechaFinAnterior}
                                 className="btn-primary disabled:opacity-50"
                             >
                                 Guardar cambios

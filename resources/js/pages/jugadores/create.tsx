@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import AppShell from '@/components/layout/AppShell';
+import JerseyNumberPicker from '@/components/jugadores/JerseyNumberPicker';
 import { Plus } from 'lucide-react';
 
 type Props = {
@@ -10,9 +11,8 @@ type Props = {
     numerosOcupados: number[];
 };
 
-const numerosCamiseta = Array.from({ length: 10 }, (_, index) => index + 1);
-
 export default function Create({ equipo, numerosOcupados }: Props) {
+    const numerosCamiseta = Array.from({ length: 10 }, (_, index) => index + 1);
     const primerNumeroDisponible = numerosCamiseta.find((numero) => !numerosOcupados.includes(numero)) ?? 1;
 
     const { data, setData, post, processing, errors } = useForm({
@@ -102,7 +102,7 @@ export default function Create({ equipo, numerosOcupados }: Props) {
                             )}
                         </div>
 
-                        <div className="grid gap-6 md:grid-cols-3">
+                        <div className="grid gap-6 md:grid-cols-2">
                         <div>
                             <label className="field-label">
                                 Posición
@@ -128,34 +128,6 @@ export default function Create({ equipo, numerosOcupados }: Props) {
 
                         <div>
                             <label className="field-label">
-                                Número de camiseta
-                            </label>
-
-                            <select
-                                value={data.numero_jugador}
-                                onChange={(e) => setData('numero_jugador', Number(e.target.value))}
-                                className="app-select mt-2 w-full rounded-xl border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
-                            >
-                                {numerosCamiseta.map((numero) => (
-                                    <option
-                                        key={numero}
-                                        value={numero}
-                                        disabled={numerosOcupados.includes(numero)}
-                                    >
-                                        {numero}
-                                    </option>
-                                ))}
-                            </select>
-
-                            {errors.numero_jugador && (
-                                <p className="mt-2 text-sm text-red-500">
-                                    {errors.numero_jugador}
-                                </p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label className="field-label">
                                 Sexo
                             </label>
 
@@ -175,6 +147,13 @@ export default function Create({ equipo, numerosOcupados }: Props) {
                             )}
                         </div>
                         </div>
+
+                        <JerseyNumberPicker
+                            value={data.numero_jugador}
+                            onChange={(numero) => setData('numero_jugador', numero)}
+                            numerosOcupados={numerosOcupados}
+                            error={errors.numero_jugador}
+                        />
 
                         <div className="flex justify-end gap-4 pt-4">
                             <Link

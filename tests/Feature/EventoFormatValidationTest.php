@@ -16,6 +16,21 @@ test('event format must be one of the allowed football formats', function () {
     expect(Evento::count())->toBe(0);
 });
 
+test('event end date cannot be before start date and message is spanish', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('eventos.store'), eventoPayload([
+            'fecha_inicio' => '2026-06-12',
+            'fecha_fin' => '2026-06-11',
+        ]))
+        ->assertSessionHasErrors([
+            'fecha_fin' => 'El campo fecha de fin debe ser una fecha posterior o igual a fecha de inicio.',
+        ]);
+
+    expect(Evento::count())->toBe(0);
+});
+
 test('event can be created with normalized football format', function () {
     $user = User::factory()->create();
 
