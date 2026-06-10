@@ -33,6 +33,7 @@ export default function PasswordField({
             <div className="flex items-center">
                 <Label htmlFor={id} className="text-sm font-medium text-gray-700">
                     {label}
+                    {required && <span className="ml-1 text-red-600">*</span>}
                 </Label>
 
                 {action}

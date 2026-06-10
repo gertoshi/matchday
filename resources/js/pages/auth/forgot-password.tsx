@@ -1,6 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import AuthCard from '@/components/auth/auth-card';
+import AuthLogo from '@/components/auth/auth-logo';
 import FormField from '@/components/auth/form-field';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -13,11 +14,9 @@ export default function ForgotPassword({ status }: { status?: string }) {
             <Head title="Recuperar contraseña" />
 
             <AuthCard>
-                <div className="mb-8 text-center">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#d1fae5] text-2xl font-bold text-[#065f46]">
-                        M
-                    </div>
+                <AuthLogo description="" />
 
+                <div className="mb-8 text-center">
                     <h1 className="text-3xl font-bold text-gray-900">
                         Recuperar contraseña
                     </h1>
@@ -41,6 +40,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                 name="email"
                                 label="Correo electrónico"
                                 type="email"
+                                required
                                 autoComplete="off"
                                 autoFocus
                                 placeholder="correo@ejemplo.com"

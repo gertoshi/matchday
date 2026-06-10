@@ -65,6 +65,7 @@ export default function Register() {
                                 name="phone"
                                 label="Teléfono"
                                 type="text"
+                                required
                                 tabIndex={3}
                                 placeholder="Ej: 3704 123456"
                                 error={errors.phone}
@@ -78,6 +79,7 @@ export default function Register() {
                                     className="text-sm font-medium text-gray-700"
                                 >
                                     Fecha de nacimiento
+                                    <span className="ml-1 text-red-600">*</span>
                                 </Label>
                                 <input
                                     id="birth_date"

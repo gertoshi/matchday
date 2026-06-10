@@ -1,5 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
 import AuthCard from '@/components/auth/auth-card';
+import AuthLogo from '@/components/auth/auth-logo';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -12,17 +13,15 @@ export default function VerifyEmail({ status }: { status?: string }) {
             <Head title="Verificar correo electrónico" />
 
             <AuthCard>
-                <div className="mb-8 text-center">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#d1fae5] text-2xl font-bold text-[#065f46]">
-                        M
-                    </div>
+                <AuthLogo description="" />
 
+                <div className="mb-8 text-center">
                     <h1 className="text-3xl font-bold text-gray-900">
-                        Verificá tu correo
+                        Verificá tu correo electrónico
                     </h1>
 
                     <p className="mt-2 text-sm text-gray-500">
-                        Te enviamos un enlace de verificación al correo que usaste para registrarte.
+                        Te enviamos un enlace de verificación a tu correo.
                     </p>
                 </div>
 

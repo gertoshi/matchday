@@ -69,7 +69,7 @@ Route::middleware(['auth', 'verified', 'sanction', 'admin'])->prefix('admin')->n
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'sanction'])->group(function () {
+Route::middleware(['auth', 'verified', 'sanction'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------

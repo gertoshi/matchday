@@ -2,8 +2,11 @@
 
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Fortify\Features;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->skipUnlessFortifyHas(Features::resetPasswords());
@@ -20,9 +23,20 @@ test('reset password link can be requested', function () {
 
     $user = User::factory()->create();
 
-    $this->post(route('password.email'), ['email' => $user->email]);
+    $this->post(route('password.email'), ['email' => $user->email])
+        ->assertSessionHas('status', 'Si el correo existe en el sistema, recibirás un enlace para restablecer tu contraseña.');
 
     Notification::assertSentTo($user, ResetPassword::class);
+});
+
+test('reset password link request keeps a safe message for unknown emails', function () {
+    Notification::fake();
+
+    $this->post(route('password.email'), ['email' => 'missing@example.com'])
+        ->assertSessionHas('status', 'Si el correo existe en el sistema, recibirás un enlace para restablecer tu contraseña.')
+        ->assertSessionHasNoErrors();
+
+    Notification::assertNothingSent();
 });
 
 test('reset password screen can be rendered', function () {

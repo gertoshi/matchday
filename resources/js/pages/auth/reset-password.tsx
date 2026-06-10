@@ -1,5 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
 import AuthCard from '@/components/auth/auth-card';
+import AuthLogo from '@/components/auth/auth-logo';
 import FormField from '@/components/auth/form-field';
 import PasswordField from '@/components/auth/password-field';
 import { Button } from '@/components/ui/button';
@@ -17,11 +18,9 @@ export default function ResetPassword({ token, email }: Props) {
             <Head title="Restablecer contraseña" />
 
             <AuthCard>
-                <div className="mb-8 text-center">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#d1fae5] text-2xl font-bold text-[#065f46]">
-                        M
-                    </div>
+                <AuthLogo description="" />
 
+                <div className="mb-8 text-center">
                     <h1 className="text-3xl font-bold text-gray-900">
                         Restablecer contraseña
                     </h1>
@@ -44,6 +43,7 @@ export default function ResetPassword({ token, email }: Props) {
                                 name="email"
                                 label="Correo electrónico"
                                 type="email"
+                                required
                                 autoComplete="email"
                                 placeholder="correo@ejemplo.com"
                                 error={errors.email}
@@ -53,6 +53,7 @@ export default function ResetPassword({ token, email }: Props) {
                                 id="password"
                                 name="password"
                                 label="Nueva contraseña"
+                                required
                                 autoComplete="new-password"
                                 placeholder="Nueva contraseña"
                                 autoFocus
@@ -63,6 +64,7 @@ export default function ResetPassword({ token, email }: Props) {
                                 id="password_confirmation"
                                 name="password_confirmation"
                                 label="Confirmar contraseña"
+                                required
                                 autoComplete="new-password"
                                 placeholder="Confirmar contraseña"
                                 error={errors.password_confirmation}
