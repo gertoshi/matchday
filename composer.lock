@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bf415604515e288de4a9df72c23b7db7",
+    "content-hash": "fd4e09bae767b60a11aa78433c559757",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -2330,26 +2330,25 @@
         },
         {
             "name": "mercadopago/dx-php",
-            "version": "3.11.1",
+            "version": "3.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mercadopago/sdk-php.git",
-                "reference": "e414133d453418f9d44418b57d1b1b034b08d8dc"
+                "reference": "f398a619beccced1abe9d99586d64525f22313e3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mercadopago/sdk-php/zipball/e414133d453418f9d44418b57d1b1b034b08d8dc",
-                "reference": "e414133d453418f9d44418b57d1b1b034b08d8dc",
+                "url": "https://api.github.com/repos/mercadopago/sdk-php/zipball/f398a619beccced1abe9d99586d64525f22313e3",
+                "reference": "f398a619beccced1abe9d99586d64525f22313e3",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.5"
+                "php": ">=8.2"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^3.22",
-                "phpunit/phpunit": "^11.0",
-                "squizlabs/php_codesniffer": "3.*",
-                "symfony/console": "^7.0"
+                "phpunit/phpunit": "^10.2",
+                "squizlabs/php_codesniffer": "3.*"
             },
             "type": "library",
             "autoload": {
@@ -2365,9 +2364,9 @@
             "homepage": "https://github.com/mercadopago/sdk-php",
             "support": {
                 "issues": "https://github.com/mercadopago/sdk-php/issues",
-                "source": "https://github.com/mercadopago/sdk-php/tree/3.11.1"
+                "source": "https://github.com/mercadopago/sdk-php/tree/3.10.0"
             },
-            "time": "2026-06-05T18:02:31+00:00"
+            "time": "2026-05-21T01:04:48+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -10179,12 +10178,12 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.3"
     },
-    "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "platform-dev": [],
+    "plugin-api-version": "2.6.0"
 }
