@@ -24,6 +24,7 @@ export default function PasswordInput({
                 onClick={() => setShowPassword((prev) => !prev)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
+                title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 tabIndex={-1}
             >
                 {showPassword ? (

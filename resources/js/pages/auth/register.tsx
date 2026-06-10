@@ -8,12 +8,36 @@ import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { Check, X } from 'lucide-react';
 import { useState } from 'react';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
 export default function Register() {
     const [birthDate, setBirthDate] = useState('');
+    const [password, setPassword] = useState('');
+    const passwordRequirements = [
+        {
+            label: 'Mínimo 12 caracteres',
+            passes: password.length >= 12,
+        },
+        {
+            label: 'Una letra mayúscula',
+            passes: /[A-Z]/.test(password),
+        },
+        {
+            label: 'Una letra minúscula',
+            passes: /[a-z]/.test(password),
+        },
+        {
+            label: 'Un número',
+            passes: /\d/.test(password),
+        },
+        {
+            label: 'Un símbolo',
+            passes: /[^A-Za-z0-9]/.test(password),
+        },
+    ];
 
     return (
         <>
@@ -105,7 +129,34 @@ export default function Register() {
                                 autoComplete="new-password"
                                 placeholder="Contraseña"
                                 error={errors.password}
+                                value={password}
+                                onChange={(event) => setPassword(event.target.value)}
                             />
+
+                            <div className="-mt-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                                <p className="text-xs font-semibold text-gray-700">
+                                    La contraseña debe contener:
+                                </p>
+                                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                    {passwordRequirements.map((requirement) => (
+                                        <div
+                                            key={requirement.label}
+                                            className={`flex items-center gap-2 text-xs font-medium ${
+                                                requirement.passes
+                                                    ? 'text-emerald-700'
+                                                    : 'text-gray-500'
+                                            }`}
+                                        >
+                                            {requirement.passes ? (
+                                                <Check className="h-4 w-4" />
+                                            ) : (
+                                                <X className="h-4 w-4 text-gray-400" />
+                                            )}
+                                            <span>{requirement.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
 
                             {/* CONFIRM PASSWORD */}
 

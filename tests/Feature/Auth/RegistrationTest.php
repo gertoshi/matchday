@@ -28,8 +28,8 @@ test('new users can register', function () {
         'email' => 'test@example.com',
         'phone' => '3704123456',
         'birth_date' => '2000-01-01',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => 'Password123!',
+        'password_confirmation' => 'Password123!',
     ]);
 
     $this->assertAuthenticated();
@@ -64,5 +64,18 @@ test('password minimum validation message is spanish', function () {
     ]);
 
     expect($validator->errors()->first('password'))
-        ->toBe('El campo contraseña debe tener al menos 12 caracteres.');
+        ->toBe('La contraseña debe tener al menos 12 caracteres.');
+});
+
+test('modern password validation messages are spanish', function () {
+    $this->post(route('register.store'), [
+        'name' => 'Test User',
+        'email' => 'test@example.com',
+        'phone' => '3704123456',
+        'birth_date' => '2000-01-01',
+        'password' => 'weakpassword',
+        'password_confirmation' => 'different-password',
+    ])->assertSessionHasErrors([
+        'password' => 'La contraseña debe contener al menos una letra mayúscula y una minúscula.',
+    ]);
 });

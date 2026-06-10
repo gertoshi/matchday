@@ -1,7 +1,7 @@
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Label } from '@/components/ui/label';
-import type { ReactNode } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
 
 type PasswordFieldProps = {
     id: string;
@@ -14,6 +14,8 @@ type PasswordFieldProps = {
     autoComplete?: string;
     autoFocus?: boolean;
     action?: ReactNode;
+    value?: string;
+    onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
 };
 
 export default function PasswordField({
@@ -27,6 +29,8 @@ export default function PasswordField({
     autoComplete,
     autoFocus = false,
     action,
+    value,
+    onChange,
 }: PasswordFieldProps) {
     return (
         <div className="grid gap-2">
@@ -47,6 +51,8 @@ export default function PasswordField({
                 autoComplete={autoComplete}
                 autoFocus={autoFocus}
                 placeholder={placeholder}
+                value={value}
+                onChange={onChange}
                 className="h-12 rounded-xl border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400"
             />
 

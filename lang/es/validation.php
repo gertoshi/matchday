@@ -37,15 +37,26 @@ return [
     'numeric' => 'El campo :attribute debe ser numérico.',
     'password' => [
         'letters' => 'El campo :attribute debe contener al menos una letra.',
-        'mixed' => 'El campo :attribute debe contener al menos una mayúscula y una minúscula.',
-        'numbers' => 'El campo :attribute debe contener al menos un número.',
-        'symbols' => 'El campo :attribute debe contener al menos un símbolo.',
+        'mixed' => 'La contraseña debe contener al menos una letra mayúscula y una minúscula.',
+        'mixedCase' => 'La contraseña debe contener al menos una letra mayúscula y una minúscula.',
+        'numbers' => 'La contraseña debe contener al menos un número.',
+        'symbols' => 'La contraseña debe contener al menos un símbolo.',
         'uncompromised' => 'El valor ingresado para :attribute apareció en una filtración de datos. Elegí otro valor.',
     ],
+    'regex' => 'El formato del campo :attribute no es válido.',
     'required' => 'El campo :attribute es obligatorio.',
     'required_if' => 'El campo :attribute es obligatorio cuando :other es :value.',
     'string' => 'El campo :attribute debe ser texto.',
     'unique' => 'El valor ingresado para :attribute ya está en uso.',
+
+    'custom' => [
+        'password' => [
+            'min' => 'La contraseña debe tener al menos :min caracteres.',
+        ],
+        'password_confirmation' => [
+            'confirmed' => 'La confirmación de contraseña no coincide.',
+        ],
+    ],
 
     'attributes' => [
         'name' => 'nombre de usuario',
