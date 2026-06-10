@@ -1,8 +1,11 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
+
+uses(RefreshDatabase::class);
 
 test('login screen can be rendered', function () {
     $response = $this->get(route('login'));
@@ -54,6 +57,8 @@ test('users can not authenticate with invalid password', function () {
     $this->post(route('login.store'), [
         'email' => $user->email,
         'password' => 'wrong-password',
+    ])->assertSessionHasErrors([
+        'email' => 'Las credenciales ingresadas no coinciden con nuestros registros.',
     ]);
 
     $this->assertGuest();

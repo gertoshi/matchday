@@ -4,6 +4,8 @@ use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Features;
 
 uses(RefreshDatabase::class);
@@ -37,4 +39,30 @@ test('new users can register', function () {
 
     expect($user->email_verified_at)->toBeNull();
     Notification::assertSentTo($user, VerifyEmail::class);
+});
+
+test('registration validation messages are spanish', function () {
+    $this->post(route('register.store'), [
+        'name' => 'Test User',
+        'email' => 'test@example.com',
+        'phone' => '123',
+        'birth_date' => '',
+        'password' => '',
+        'password_confirmation' => '',
+    ])->assertSessionHasErrors([
+        'phone' => 'El campo teléfono debe tener 10 dígitos.',
+        'birth_date' => 'El campo fecha de nacimiento es obligatorio.',
+        'password' => 'El campo contraseña es obligatorio.',
+    ]);
+});
+
+test('password minimum validation message is spanish', function () {
+    $validator = Validator::make([
+        'password' => 'short',
+    ], [
+        'password' => ['required', 'string', Password::min(12)],
+    ]);
+
+    expect($validator->errors()->first('password'))
+        ->toBe('El campo contraseña debe tener al menos 12 caracteres.');
 });
