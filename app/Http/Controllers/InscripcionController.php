@@ -36,6 +36,9 @@ class InscripcionController extends Controller
                 'cuota_inscripcion' => $inscripcion->cuota_inscripcion,
                 'cuota_pagada' => $inscripcion->cuota_pagada,
                 'fecha_inscripcion' => optional($inscripcion->fecha_inscripcion)->format('Y-m-d H:i'),
+                'fecha_pago' => optional($inscripcion->fecha_pago)->format('Y-m-d H:i'),
+                'metodo_pago' => $inscripcion->metodo_pago,
+                'mercadopago_status' => $inscripcion->mercadopago_status,
                 'observaciones' => $inscripcion->observaciones,
                 'evento' => $inscripcion->evento ? [
                     'id' => $inscripcion->evento->id,
@@ -119,6 +122,12 @@ class InscripcionController extends Controller
                 ->with('error', 'Este torneo no acepta nuevas inscripciones.');
         }
 
+        if ($evento->tipo_inscripcion === 'pago') {
+            return redirect()
+                ->route('inscripciones.create', ['evento_id' => $evento->id])
+                ->with('error', 'Para inscribirte a este torneo tenés que pagar con Mercado Pago.');
+        }
+
         $duplicada = Inscripcion::query()
             ->where('evento_id', $evento->id)
             ->where('equipo_id', $equipo->id)
@@ -149,9 +158,9 @@ class InscripcionController extends Controller
             'cuota_inscripcion' => $evento->tipo_inscripcion === 'pago'
                 ? $evento->monto_inscripcion
                 : 0,
-            'cuota_pagada' => false,
-            'fecha_pago' => null,
-            'metodo_pago' => null,
+            'cuota_pagada' => true,
+            'fecha_pago' => now(),
+            'metodo_pago' => 'gratis',
             'observaciones' => $datos['observaciones'] ?? null,
         ]);
 

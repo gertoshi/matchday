@@ -21,18 +21,21 @@ class Inscripcion extends Model
         'cuota_pagada',
         'fecha_pago',
         'metodo_pago',
+        'mercadopago_preference_id',
+        'mercadopago_payment_id',
+        'mercadopago_status',
         'observaciones',
     ];
 
-    //Relacion:
-    //Esta Inscripcion pertenecen a un evento
+    // Relacion:
+    // Esta Inscripcion pertenecen a un evento
     public function evento(): BelongsTo
     {
         return $this->belongsTo(Evento::class);
     }
 
-    //Relacion:
-    //Esta inscripcion pueden pertenecer a un solo equipo
+    // Relacion:
+    // Esta inscripcion pueden pertenecer a un solo equipo
     public function equipo(): BelongsTo
     {
         return $this->belongsTo(Equipo::class);

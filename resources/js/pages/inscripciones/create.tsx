@@ -21,9 +21,17 @@ export default function Create({ eventoSeleccionado, eventos }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         evento_id: eventoSeleccionado?.id ? String(eventoSeleccionado.id) : '',
     });
+    const eventoActivo = eventoSeleccionado ?? eventos.find((evento) => String(evento.id) === data.evento_id) ?? null;
+    const esPago = eventoActivo?.tipo_inscripcion === 'pago';
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+
+        if (esPago && eventoActivo) {
+            post(`/eventos/${eventoActivo.id}/mercadopago/preferencia`);
+            return;
+        }
+
         post('/inscripciones');
     }
 
@@ -54,9 +62,6 @@ export default function Create({ eventoSeleccionado, eventos }: Props) {
                                 )}
                             />
                         </div>
-                        <p className="mt-5 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
-                            La validación del pago se realizará más adelante.
-                        </p>
                     </section>
                 ) : null}
 
@@ -97,7 +102,11 @@ export default function Create({ eventoSeleccionado, eventos }: Props) {
                                 disabled={processing}
                                 className="btn-primary disabled:opacity-50"
                             >
-                                Confirmar inscripción
+                                {processing && esPago
+                                    ? 'Redirigiendo a Mercado Pago...'
+                                    : esPago
+                                      ? 'Pagar y confirmar inscripción'
+                                      : 'Confirmar inscripción'}
                             </button>
                         </div>
                     </form>

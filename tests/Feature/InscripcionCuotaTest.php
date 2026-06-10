@@ -8,7 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('paid event inscription uses event amount and ignores frontend amount', function () {
+test('paid event inscription must use mercado pago flow', function () {
     $organizer = User::factory()->create();
     $user = User::factory()->create();
     Equipo::create([
@@ -24,14 +24,10 @@ test('paid event inscription uses event amount and ignores frontend amount', fun
             'evento_id' => $evento->id,
             'cuota_inscripcion' => 1,
         ])
-        ->assertRedirect(route('inscripciones.index'));
+        ->assertRedirect(route('inscripciones.create', ['evento_id' => $evento->id]))
+        ->assertSessionHas('error', 'Para inscribirte a este torneo tenés que pagar con Mercado Pago.');
 
-    $inscripcion = Inscripcion::firstOrFail();
-
-    expect((float) $inscripcion->cuota_inscripcion)->toBe(5000.0)
-        ->and($inscripcion->cuota_pagada)->toBeFalse()
-        ->and($inscripcion->fecha_pago)->toBeNull()
-        ->and($inscripcion->metodo_pago)->toBeNull();
+    expect(Inscripcion::count())->toBe(0);
 });
 
 test('free event inscription stores no fee', function () {
@@ -54,7 +50,29 @@ test('free event inscription stores no fee', function () {
     $inscripcion = Inscripcion::firstOrFail();
 
     expect((float) $inscripcion->cuota_inscripcion)->toBe(0.0)
-        ->and($inscripcion->cuota_pagada)->toBeFalse();
+        ->and($inscripcion->cuota_pagada)->toBeTrue()
+        ->and($inscripcion->metodo_pago)->toBe('gratis');
+});
+
+test('mercado pago preference requires configured access token', function () {
+    config(['services.mercadopago.access_token' => null]);
+
+    $organizer = User::factory()->create();
+    $user = User::factory()->create();
+    Equipo::create([
+        'user_id' => $user->id,
+        'nombre_equipo' => 'Equipo Pago',
+        'plantilla' => 0,
+        'estado_equipo' => 'activo',
+    ]);
+    $evento = createEventoCuota($organizer, 'pago', 2000);
+
+    $this->actingAs($user)
+        ->post(route('mercadopago.preferencia', $evento))
+        ->assertRedirect()
+        ->assertSessionHas('error', 'Mercado Pago no está configurado todavía.');
+
+    expect(Inscripcion::count())->toBe(0);
 });
 
 function createEventoCuota(User $organizer, string $tipoInscripcion, ?int $monto): Evento

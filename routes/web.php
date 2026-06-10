@@ -11,6 +11,7 @@ use App\Http\Controllers\EventoController;
 use App\Http\Controllers\FixtureController;
 use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\JugadorController;
+use App\Http\Controllers\MercadoPagoController;
 use App\Http\Controllers\PartidoController;
 use App\Http\Controllers\PerfilUsuarioController;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::inertia('/', 'landing')->name('home');
+
+Route::post('/webhooks/mercadopago', [MercadoPagoController::class, 'webhook'])
+    ->name('webhooks.mercadopago');
 
 /*
 |--------------------------------------------------------------------------
@@ -99,6 +103,18 @@ Route::middleware(['auth', 'verified', 'sanction'])->group(function () {
 
     Route::post('/eventos/{evento}/fixture/generar', [FixtureController::class, 'generar'])
         ->name('eventos.fixture.generar');
+
+    Route::post('/eventos/{evento}/mercadopago/preferencia', [MercadoPagoController::class, 'crearPreferencia'])
+        ->name('mercadopago.preferencia');
+
+    Route::get('/inscripciones/mercadopago/success', [MercadoPagoController::class, 'success'])
+        ->name('mercadopago.success');
+
+    Route::get('/inscripciones/mercadopago/failure', [MercadoPagoController::class, 'failure'])
+        ->name('mercadopago.failure');
+
+    Route::get('/inscripciones/mercadopago/pending', [MercadoPagoController::class, 'pending'])
+        ->name('mercadopago.pending');
 
     Route::resource(
         'inscripciones',

@@ -10,6 +10,9 @@ type Inscripcion = {
     cuota_inscripcion?: string | null;
     cuota_pagada: boolean;
     fecha_inscripcion: string;
+    fecha_pago?: string | null;
+    metodo_pago?: string | null;
+    mercadopago_status?: string | null;
     observaciones?: string | null;
     evento?: {
         id: number;
@@ -37,6 +40,12 @@ export default function Index({ inscripciones }: Props) {
         abierto: 'bg-emerald-100 text-emerald-700',
         en_curso: 'bg-blue-100 text-blue-700',
         finalizado: 'bg-slate-200 text-slate-700',
+    };
+    const pagoClasses: Record<string, string> = {
+        aprobado: 'bg-emerald-100 text-emerald-700',
+        pendiente: 'bg-amber-100 text-amber-700',
+        rechazado: 'bg-red-100 text-red-700',
+        gratis: 'bg-blue-100 text-blue-700',
     };
 
     return (
@@ -90,13 +99,35 @@ export default function Index({ inscripciones }: Props) {
                                             Fecha: {inscripcion.fecha_inscripcion}
                                         </span>
                                     </div>
-                                    {hasCuota(inscripcion.cuota_inscripcion) ? (
+                                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                        <PaymentInfo
+                                            label="Estado inscripción"
+                                            value={estadoInscripcionLabel(inscripcion.estado_inscripcion)}
+                                        />
+                                        <PaymentInfo
+                                            label="Monto"
+                                            value={hasCuota(inscripcion.cuota_inscripcion)
+                                                ? formatMoney(inscripcion.cuota_inscripcion)
+                                                : 'Gratis'}
+                                        />
+                                        <PaymentInfo
+                                            label="Método"
+                                            value={metodoPagoLabel(inscripcion.metodo_pago, inscripcion.cuota_inscripcion)}
+                                        />
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase text-gray-500">
+                                                Estado de pago
+                                            </p>
+                                            <span
+                                                className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${pagoClasses[estadoPago(inscripcion)]}`}
+                                            >
+                                                {estadoPagoLabel(inscripcion)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {inscripcion.fecha_pago && (
                                         <p className="mt-2 text-sm text-gray-500">
-                                            Monto: {formatMoney(inscripcion.cuota_inscripcion)} · {inscripcion.cuota_pagada ? 'Pago realizado' : 'Pago pendiente'}
-                                        </p>
-                                    ) : (
-                                        <p className="mt-2 text-sm text-emerald-700">
-                                            Inscripción gratuita
+                                            Fecha de pago: {inscripcion.fecha_pago}
                                         </p>
                                     )}
                                     {inscripcion.observaciones && (
@@ -125,6 +156,68 @@ function formatMoney(value?: string | null) {
         minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
         maximumFractionDigits: 2,
     })}`;
+}
+
+function PaymentInfo({ label, value }: { label: string; value: string }) {
+    return (
+        <div>
+            <p className="text-xs font-semibold uppercase text-gray-500">
+                {label}
+            </p>
+            <p className="mt-2 text-sm font-semibold text-gray-900">{value}</p>
+        </div>
+    );
+}
+
+function estadoPago(inscripcion: Inscripcion) {
+    if (!hasCuota(inscripcion.cuota_inscripcion)) {
+        return 'gratis';
+    }
+
+    if (inscripcion.cuota_pagada || inscripcion.mercadopago_status === 'approved') {
+        return 'aprobado';
+    }
+
+    if (inscripcion.mercadopago_status === 'rejected') {
+        return 'rechazado';
+    }
+
+    return 'pendiente';
+}
+
+function estadoPagoLabel(inscripcion: Inscripcion) {
+    const estado = estadoPago(inscripcion);
+    const labels: Record<string, string> = {
+        aprobado: 'Pago aprobado',
+        pendiente: 'Pago pendiente',
+        rechazado: 'Pago rechazado',
+        gratis: 'Gratis',
+    };
+
+    return labels[estado];
+}
+
+function metodoPagoLabel(metodo?: string | null, cuota?: string | null) {
+    if (!hasCuota(cuota)) {
+        return 'Gratis';
+    }
+
+    if (metodo === 'mercadopago') {
+        return 'Mercado Pago';
+    }
+
+    return 'Pendiente';
+}
+
+function estadoInscripcionLabel(estado: string) {
+    const estados: Record<string, string> = {
+        pendiente: 'Pendiente',
+        confirmada: 'Confirmada',
+        rechazada: 'Rechazada',
+        cancelada: 'Cancelada',
+    };
+
+    return estados[estado] ?? estado;
 }
 
 function estadoEventoLabel(estado: EstadoEvento) {
