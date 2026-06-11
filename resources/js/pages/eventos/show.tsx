@@ -10,6 +10,8 @@ type EventoUser = {
 type Inscripcion = {
     id: number;
     estado_inscripcion: string;
+    cuota_pagada: boolean;
+    mercadopago_status?: string | null;
     equipo: {
         id: number;
         nombre_equipo: string;
@@ -209,12 +211,21 @@ export default function Show({ evento, hasEquipo }: Props) {
                                             size="lg"
                                         />
                                         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                                            <EstadoInscripcionBadge
-                                                estado={
-                                                    inscripcion.estado_inscripcion
-                                                }
-                                            />
-                                            {evento.can_manage &&
+                                            {evento.tipo_inscripcion ===
+                                            'pago' ? (
+                                                <EstadoPagoBadge
+                                                    inscripcion={inscripcion}
+                                                />
+                                            ) : (
+                                                <EstadoInscripcionBadge
+                                                    estado={
+                                                        inscripcion.estado_inscripcion
+                                                    }
+                                                />
+                                            )}
+                                            {evento.tipo_inscripcion ===
+                                                'gratis' &&
+                                            evento.can_manage &&
                                             inscripcion.estado_inscripcion ===
                                                 'pendiente' ? (
                                                 <>
@@ -253,6 +264,41 @@ export default function Show({ evento, hasEquipo }: Props) {
                 </section>
             </div>
         </AppShell>
+    );
+}
+
+function EstadoPagoBadge({ inscripcion }: { inscripcion: Inscripcion }) {
+    if (
+        inscripcion.cuota_pagada &&
+        inscripcion.estado_inscripcion === 'confirmada'
+    ) {
+        return (
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                Confirmada / Pago aprobado
+            </span>
+        );
+    }
+
+    if (inscripcion.mercadopago_status === 'rejected') {
+        return (
+            <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                Pago rechazado
+            </span>
+        );
+    }
+
+    if (inscripcion.mercadopago_status === 'cancelled') {
+        return (
+            <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-700">
+                Pago cancelado
+            </span>
+        );
+    }
+
+    return (
+        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+            Pago pendiente
+        </span>
     );
 }
 

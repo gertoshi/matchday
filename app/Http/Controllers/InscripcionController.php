@@ -225,6 +225,10 @@ class InscripcionController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            if ($evento->tipo_inscripcion === 'pago' && ! $inscripcion->cuota_pagada) {
+                abort(422, 'Las inscripciones pagas se confirman automáticamente cuando Mercado Pago aprueba el pago.');
+            }
+
             $confirmadas = Inscripcion::query()
                 ->where('evento_id', $evento->id)
                 ->where('estado_inscripcion', 'confirmada')

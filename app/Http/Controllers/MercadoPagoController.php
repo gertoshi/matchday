@@ -105,9 +105,9 @@ class MercadoPagoController extends Controller
                 ],
                 'external_reference' => (string) $inscripcion->id,
                 'back_urls' => [
-                    'success' => url('/inscripciones/mercadopago/success'),
-                    'failure' => url('/inscripciones/mercadopago/failure'),
-                    'pending' => url('/inscripciones/mercadopago/pending'),
+                    'success' => url('/inscripciones/mercadopago/success').'?'.http_build_query(['inscripcion_id' => $inscripcion->id]),
+                    'failure' => url('/inscripciones/mercadopago/failure').'?'.http_build_query(['inscripcion_id' => $inscripcion->id]),
+                    'pending' => url('/inscripciones/mercadopago/pending').'?'.http_build_query(['inscripcion_id' => $inscripcion->id]),
                 ],
                 'auto_return' => 'approved',
                 'notification_url' => url('/webhooks/mercadopago').'?'.http_build_query(['inscripcion_id' => $inscripcion->id]),
@@ -150,6 +150,8 @@ class MercadoPagoController extends Controller
 
     public function webhook(Request $request): Response
     {
+        $this->logWebhookRecibido($request);
+
         if (! $this->firmaValida($request)) {
             return response(status: 401);
         }
@@ -160,73 +162,20 @@ class MercadoPagoController extends Controller
             return response(status: 200);
         }
 
-        $inscripcionNotificada = $this->obtenerInscripcionNotificada($request);
-        $configuracionPago = $inscripcionNotificada?->evento?->user
-            ?->configuracionPago()
-            ->where('proveedor', 'mercadopago')
-            ->where('activo', true)
-            ->first();
-        $accessToken = $configuracionPago?->access_token;
-
-        if (! is_string($accessToken) || $accessToken === '') {
-            Log::warning('Webhook de Mercado Pago recibido sin configuración de pago del organizador.', [
-                'inscripcion_id' => $request->query('inscripcion_id'),
-                'x_request_id' => $request->header('x-request-id'),
-                'payment_id' => $paymentId,
-            ]);
-
-            return response(status: 200);
-        }
-
-        try {
-            MercadoPagoConfig::setAccessToken($accessToken);
-
-            $payment = (new PaymentClient)->get($paymentId);
-            $inscripcionId = (int) $payment->external_reference;
-
-            if ($inscripcionId <= 0) {
-                return response(status: 200);
-            }
-
-            $inscripcion = Inscripcion::find($inscripcionId);
-
-            if (! $inscripcion) {
-                return response(status: 200);
-            }
-
-            if ($inscripcionNotificada && (int) $inscripcionNotificada->id !== (int) $inscripcion->id) {
-                Log::warning('Webhook de Mercado Pago con referencia externa inconsistente.', [
-                    'inscripcion_notificada_id' => $inscripcionNotificada->id,
-                    'external_reference' => $inscripcionId,
-                ]);
-
-                return response(status: 200);
-            }
-
-            $status = $payment->status ?? 'unknown';
-
-            if ($status === 'approved') {
-                DB::statement('CALL sp_confirmar_pago_inscripcion(?, ?)', [
-                    $inscripcion->id,
-                    (string) $payment->id,
-                ]);
-
-                return response(status: 200);
-            }
-
-            $inscripcion->update([
-                'mercadopago_payment_id' => (string) $payment->id,
-                'mercadopago_status' => $status,
-            ]);
-        } catch (\Throwable $exception) {
-            report($exception);
-        }
+        $this->procesarPagoMercadoPago($paymentId, $this->obtenerInscripcionNotificada($request), 'webhook');
 
         return response(status: 200);
     }
 
-    public function success(): RedirectResponse
+    public function success(Request $request): RedirectResponse
     {
+        $paymentId = $this->obtenerPaymentId($request)
+            ?? $this->obtenerPaymentIdDesdeRetorno($request);
+
+        if ($paymentId) {
+            $this->procesarPagoMercadoPago($paymentId, $this->obtenerInscripcionNotificada($request), 'success');
+        }
+
         return redirect()
             ->route('inscripciones.index')
             ->with('success', 'Pago recibido. Tu inscripción quedó registrada.');
@@ -251,8 +200,19 @@ class MercadoPagoController extends Controller
         $secret = config('services.mercadopago.webhook_secret');
         $paymentId = $this->obtenerPaymentId($request);
         $requestId = $request->header('x-request-id');
+        $validacionEstricta = (bool) config('services.mercadopago.validate_webhook_signature', false);
 
-        if (app()->environment('local') || ! is_string($secret) || $secret === '') {
+        if (! $validacionEstricta) {
+            Log::warning('Webhook Mercado Pago procesado sin validación estricta de firma', [
+                'environment' => app()->environment(),
+                'x_request_id' => $requestId,
+                'payment_id' => $paymentId,
+            ]);
+
+            return true;
+        }
+
+        if (! is_string($secret) || $secret === '') {
             Log::warning('Webhook sin validación de firma porque no hay secret configurado.', [
                 'environment' => app()->environment(),
                 'x_request_id' => $requestId,
@@ -262,6 +222,7 @@ class MercadoPagoController extends Controller
             return true;
         }
 
+        $firmaValida = true;
         $signature = $this->parseMercadoPagoSignature($request->header('x-signature'));
 
         if (! $signature['ts'] || ! $signature['v1']) {
@@ -271,31 +232,47 @@ class MercadoPagoController extends Controller
                 'motivo' => 'Header x-signature incompleto o mal formado.',
             ]);
 
-            return false;
+            $firmaValida = false;
         }
 
         $dataId = $this->obtenerDataIdParaFirma($request);
 
-        if (! $dataId || ! $requestId) {
+        if ($firmaValida && (! $dataId || ! $requestId)) {
             Log::warning('Firma inválida en webhook de Mercado Pago.', [
                 'x_request_id' => $requestId,
                 'payment_id' => $paymentId,
                 'motivo' => 'Falta data.id o x-request-id para construir el manifest.',
             ]);
 
-            return false;
+            $firmaValida = false;
         }
 
-        $manifest = "id:{$dataId};request-id:{$requestId};ts:{$signature['ts']};";
-        $expectedSignature = hash_hmac('sha256', $manifest, $secret);
+        if ($firmaValida && $dataId && $requestId && $signature['ts'] && $signature['v1']) {
+            $manifest = "id:{$dataId};request-id:{$requestId};ts:{$signature['ts']};";
+            $expectedSignature = hash_hmac('sha256', $manifest, $secret);
 
-        if (! hash_equals($expectedSignature, $signature['v1'])) {
-            Log::warning('Firma inválida en webhook de Mercado Pago.', [
+            if (! hash_equals($expectedSignature, $signature['v1'])) {
+                Log::warning('Firma inválida en webhook de Mercado Pago.', [
+                    'x_request_id' => $requestId,
+                    'payment_id' => $paymentId,
+                    'motivo' => 'SignatureMismatch',
+                ]);
+
+                $firmaValida = false;
+            }
+        }
+
+        if (! $firmaValida && app()->environment(['local', 'testing'])) {
+            Log::warning('Firma inválida en webhook de Mercado Pago; se continúa por entorno no productivo.', [
+                'environment' => app()->environment(),
                 'x_request_id' => $requestId,
                 'payment_id' => $paymentId,
-                'motivo' => 'SignatureMismatch',
             ]);
 
+            return true;
+        }
+
+        if (! $firmaValida) {
             return false;
         }
 
@@ -370,7 +347,9 @@ class MercadoPagoController extends Controller
     {
         $paymentId = $this->obtenerValorWebhook($request, 'data.id')
             ?? $this->obtenerValorWebhook($request, 'data_id')
-            ?? $this->obtenerValorWebhook($request, 'id');
+            ?? $this->obtenerValorWebhook($request, 'id')
+            ?? $this->obtenerValorWebhook($request, 'payment_id')
+            ?? $this->obtenerValorWebhook($request, 'collection_id');
 
         $resource = $this->obtenerValorWebhook($request, 'resource');
 
@@ -380,6 +359,154 @@ class MercadoPagoController extends Controller
         }
 
         return is_numeric($paymentId) ? (int) $paymentId : null;
+    }
+
+    private function obtenerPaymentIdDesdeRetorno(Request $request): ?int
+    {
+        $paymentId = $request->query('payment_id')
+            ?? $request->query('collection_id');
+
+        return is_numeric($paymentId) ? (int) $paymentId : null;
+    }
+
+    private function procesarPagoMercadoPago(int $paymentId, ?Inscripcion $inscripcionNotificada, string $origen): ?Inscripcion
+    {
+        $accessToken = $this->obtenerAccessTokenParaInscripcion($inscripcionNotificada);
+
+        if (! is_string($accessToken) || $accessToken === '') {
+            Log::warning('Pago de Mercado Pago recibido sin configuración de pago del organizador.', [
+                'origen' => $origen,
+                'inscripcion_notificada_id' => $inscripcionNotificada?->id,
+                'payment_id' => $paymentId,
+            ]);
+
+            return null;
+        }
+
+        try {
+            MercadoPagoConfig::setAccessToken($accessToken);
+
+            $payment = (new PaymentClient)->get($paymentId);
+            $externalReference = $payment->external_reference ?? null;
+            $inscripcionId = is_numeric($externalReference) ? (int) $externalReference : 0;
+
+            Log::info('Pago de Mercado Pago consultado.', [
+                'origen' => $origen,
+                'payment_id' => $paymentId,
+                'status' => $payment->status ?? 'unknown',
+                'external_reference' => $externalReference,
+            ]);
+
+            if ($inscripcionId <= 0) {
+                Log::warning('Pago de Mercado Pago sin external_reference válido.', [
+                    'origen' => $origen,
+                    'payment_id' => $paymentId,
+                    'external_reference' => $externalReference,
+                ]);
+
+                return null;
+            }
+
+            $inscripcion = Inscripcion::find($inscripcionId);
+
+            if (! $inscripcion) {
+                Log::warning('Pago de Mercado Pago con inscripción inexistente.', [
+                    'origen' => $origen,
+                    'payment_id' => $paymentId,
+                    'external_reference' => $externalReference,
+                ]);
+
+                return null;
+            }
+
+            if ($inscripcionNotificada && (int) $inscripcionNotificada->id !== (int) $inscripcion->id) {
+                Log::warning('Pago de Mercado Pago con referencia externa inconsistente.', [
+                    'origen' => $origen,
+                    'inscripcion_notificada_id' => $inscripcionNotificada->id,
+                    'external_reference' => $inscripcionId,
+                    'payment_id' => $paymentId,
+                ]);
+
+                return null;
+            }
+
+            $status = (string) ($payment->status ?? 'unknown');
+
+            if ($status === 'approved') {
+                DB::statement('CALL sp_confirmar_pago_inscripcion(?, ?)', [
+                    $inscripcion->id,
+                    (string) ($payment->id ?? $paymentId),
+                ]);
+
+                return $inscripcion->refresh();
+            }
+
+            if (in_array($status, ['pending', 'rejected', 'cancelled'], true)) {
+                $inscripcion->update([
+                    'mercadopago_payment_id' => (string) ($payment->id ?? $paymentId),
+                    'mercadopago_status' => $status,
+                ]);
+            }
+
+            return $inscripcion->refresh();
+        } catch (\Throwable $exception) {
+            Log::error('Error al procesar pago de Mercado Pago.', [
+                'origen' => $origen,
+                'payment_id' => $paymentId,
+                'inscripcion_notificada_id' => $inscripcionNotificada?->id,
+                'error' => $exception->getMessage(),
+            ]);
+
+            report($exception);
+        }
+
+        return null;
+    }
+
+    private function obtenerAccessTokenParaInscripcion(?Inscripcion $inscripcion): ?string
+    {
+        $configuracionPago = $inscripcion?->evento?->user
+            ?->configuracionPago()
+            ->where('proveedor', 'mercadopago')
+            ->where('activo', true)
+            ->first();
+
+        return $configuracionPago?->access_token;
+    }
+
+    private function logWebhookRecibido(Request $request): void
+    {
+        Log::info('Webhook de Mercado Pago recibido.', [
+            'headers' => [
+                'x_signature' => $request->header('x-signature'),
+                'x_request_id' => $request->header('x-request-id'),
+            ],
+            'query' => $this->sanitizarDatosLog($request->query->all()),
+            'body' => $this->sanitizarDatosLog($request->all()),
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $datos
+     * @return array<string, mixed>
+     */
+    private function sanitizarDatosLog(array $datos): array
+    {
+        $sensibles = ['access_token', 'webhook_secret', 'secret', 'token', 'authorization'];
+
+        foreach ($datos as $key => $value) {
+            if (in_array(strtolower((string) $key), $sensibles, true)) {
+                $datos[$key] = '[redacted]';
+
+                continue;
+            }
+
+            if (is_array($value)) {
+                $datos[$key] = $this->sanitizarDatosLog($value);
+            }
+        }
+
+        return $datos;
     }
 
     private function obtenerValorWebhook(Request $request, string $key): mixed

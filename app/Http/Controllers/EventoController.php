@@ -106,6 +106,8 @@ class EventoController extends Controller
                 'inscripciones' => $evento->inscripciones->map(fn ($inscripcion) => [
                     'id' => $inscripcion->id,
                     'estado_inscripcion' => $inscripcion->estado_inscripcion,
+                    'cuota_pagada' => $inscripcion->cuota_pagada,
+                    'mercadopago_status' => $inscripcion->mercadopago_status,
                     'equipo' => $inscripcion->equipo ? [
                         'id' => $inscripcion->equipo->id,
                         'nombre_equipo' => $inscripcion->equipo->nombre_equipo,
