@@ -65,7 +65,7 @@ test('mercado pago webhook is processed without strict signature validation', fu
     forceProductionEnvironment();
     config([
         'services.mercadopago.webhook_secret' => 'test-webhook-secret',
-        'services.mercadopago.validate_webhook_signature' => false,
+        'services.mercadopago.validate_webhook_signature' => 'false',
     ]);
     Log::spy();
 
@@ -77,7 +77,7 @@ test('mercado pago webhook is processed without strict signature validation', fu
     ])->assertOk();
 
     Log::shouldHaveReceived('warning')->with(
-        'Webhook Mercado Pago procesado sin validación estricta de firma',
+        'Webhook Mercado Pago procesado sin validación estricta de firma.',
         Mockery::on(fn (array $context): bool => $context['x_request_id'] === 'request-123'
             && $context['payment_id'] === 123456),
     );

@@ -26,7 +26,7 @@ return [
         'access_token' => env('MERCADOPAGO_ACCESS_TOKEN'),
         'public_key' => env('MERCADOPAGO_PUBLIC_KEY'),
         'webhook_secret' => env('MERCADOPAGO_WEBHOOK_SECRET'),
-        'validate_webhook_signature' => env('MERCADOPAGO_VALIDATE_WEBHOOK_SIGNATURE', false),
+        'validate_webhook_signature' => filter_var(env('MERCADOPAGO_VALIDATE_WEBHOOK_SIGNATURE', false), FILTER_VALIDATE_BOOL),
     ],
 
     'ses' => [

@@ -200,10 +200,10 @@ class MercadoPagoController extends Controller
         $secret = config('services.mercadopago.webhook_secret');
         $paymentId = $this->obtenerPaymentId($request);
         $requestId = $request->header('x-request-id');
-        $validacionEstricta = (bool) config('services.mercadopago.validate_webhook_signature', false);
+        $validacionEstricta = $this->validarFirmaWebhookMercadoPago();
 
         if (! $validacionEstricta) {
-            Log::warning('Webhook Mercado Pago procesado sin validación estricta de firma', [
+            Log::warning('Webhook Mercado Pago procesado sin validación estricta de firma.', [
                 'environment' => app()->environment(),
                 'x_request_id' => $requestId,
                 'payment_id' => $paymentId,
@@ -435,7 +435,15 @@ class MercadoPagoController extends Controller
             if ($status === 'approved') {
                 DB::statement('CALL sp_confirmar_pago_inscripcion(?, ?)', [
                     $inscripcion->id,
-                    (string) ($payment->id ?? $paymentId),
+                    (string) $paymentId,
+                ]);
+
+                Log::info('Inscripción confirmada por pago aprobado de Mercado Pago.', [
+                    'origen' => $origen,
+                    'payment_id' => $paymentId,
+                    'external_reference' => $externalReference,
+                    'status' => $status,
+                    'inscripcion_id' => $inscripcion->id,
                 ]);
 
                 return $inscripcion->refresh();
@@ -472,6 +480,14 @@ class MercadoPagoController extends Controller
             ->first();
 
         return $configuracionPago?->access_token;
+    }
+
+    private function validarFirmaWebhookMercadoPago(): bool
+    {
+        return filter_var(
+            config('services.mercadopago.validate_webhook_signature', false),
+            FILTER_VALIDATE_BOOL,
+        );
     }
 
     private function logWebhookRecibido(Request $request): void
