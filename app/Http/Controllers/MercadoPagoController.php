@@ -161,15 +161,18 @@ class MercadoPagoController extends Controller
         }
 
         $inscripcionNotificada = $this->obtenerInscripcionNotificada($request);
-        $accessToken = $inscripcionNotificada?->evento?->user
+        $configuracionPago = $inscripcionNotificada?->evento?->user
             ?->configuracionPago()
             ->where('proveedor', 'mercadopago')
             ->where('activo', true)
-            ->value('access_token');
+            ->first();
+        $accessToken = $configuracionPago?->access_token;
 
         if (! is_string($accessToken) || $accessToken === '') {
             Log::warning('Webhook de Mercado Pago recibido sin configuración de pago del organizador.', [
                 'inscripcion_id' => $request->query('inscripcion_id'),
+                'x_request_id' => $request->header('x-request-id'),
+                'payment_id' => $paymentId,
             ]);
 
             return response(status: 200);
@@ -202,7 +205,7 @@ class MercadoPagoController extends Controller
 
             $status = $payment->status ?? 'unknown';
 
-            if ($status === 'approved' && (float) $payment->transaction_amount >= (float) $inscripcion->cuota_inscripcion) {
+            if ($status === 'approved') {
                 DB::statement('CALL sp_confirmar_pago_inscripcion(?, ?)', [
                     $inscripcion->id,
                     (string) $payment->id,
@@ -254,7 +257,6 @@ class MercadoPagoController extends Controller
                 'environment' => app()->environment(),
                 'x_request_id' => $requestId,
                 'payment_id' => $paymentId,
-                'secret_configurado' => is_string($secret) && $secret !== '',
             ]);
 
             return true;
@@ -304,7 +306,7 @@ class MercadoPagoController extends Controller
                 'x_request_id' => $requestId,
                 'payment_id' => $paymentId,
                 'drift_seconds' => $driftSeconds,
-                'sugerencia' => 'Verificar reloj del servidor con timedatectl.',
+                'sugerencia' => 'Verificar que la hora del servidor sea correcta con el comando timedatectl.',
             ]);
         }
 
@@ -345,13 +347,9 @@ class MercadoPagoController extends Controller
 
     private function obtenerDataIdParaFirma(Request $request): ?string
     {
-        $query = $request->query->all();
-        $dataId = $query['data.id']
-            ?? $query['data_id']
-            ?? data_get($query, 'data.id')
-            ?? $request->input('data.id')
-            ?? $request->input('data_id')
-            ?? $request->input('id');
+        $dataId = $this->obtenerValorWebhook($request, 'data.id')
+            ?? $this->obtenerValorWebhook($request, 'data_id')
+            ?? $this->obtenerValorWebhook($request, 'id');
 
         return is_scalar($dataId) && (string) $dataId !== '' ? strtolower((string) $dataId) : null;
     }
@@ -370,17 +368,29 @@ class MercadoPagoController extends Controller
 
     private function obtenerPaymentId(Request $request): ?int
     {
-        $paymentId = $request->input('data.id')
-            ?? $request->query('data.id')
-            ?? $request->input('id')
-            ?? $request->query('id');
+        $paymentId = $this->obtenerValorWebhook($request, 'data.id')
+            ?? $this->obtenerValorWebhook($request, 'data_id')
+            ?? $this->obtenerValorWebhook($request, 'id');
 
-        if (! $paymentId && is_string($request->input('resource'))) {
-            $path = parse_url($request->input('resource'), PHP_URL_PATH);
+        $resource = $this->obtenerValorWebhook($request, 'resource');
+
+        if (! $paymentId && is_string($resource)) {
+            $path = parse_url($resource, PHP_URL_PATH);
             $paymentId = $path ? basename($path) : null;
         }
 
         return is_numeric($paymentId) ? (int) $paymentId : null;
+    }
+
+    private function obtenerValorWebhook(Request $request, string $key): mixed
+    {
+        $query = $request->query->all();
+        $payload = $request->all();
+
+        return $query[$key]
+            ?? data_get($query, $key)
+            ?? $payload[$key]
+            ?? data_get($payload, $key);
     }
 
     private function obtenerInscripcionNotificada(Request $request): ?Inscripcion
