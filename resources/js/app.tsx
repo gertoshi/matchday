@@ -26,6 +26,8 @@ createInertiaApp({
                 return null;
             case name.startsWith('inscripciones/'):
                 return null;
+            case name.startsWith('configuracion-pago/'):
+                return null;
             case name.startsWith('partidos/'):
                 return null;
             case name.startsWith('perfil_usuario/'):

@@ -85,5 +85,9 @@ return [
         'formato_evento' => 'formato',
         'tipo_inscripcion' => 'tipo de inscripción',
         'monto_inscripcion' => 'monto de inscripción',
+        'modo' => 'modo',
+        'public_key' => 'Public Key',
+        'access_token' => 'Access Token',
+        'activo' => 'estado activo',
     ],
 ];

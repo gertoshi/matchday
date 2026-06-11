@@ -54,9 +54,7 @@ test('free event inscription stores no fee', function () {
         ->and($inscripcion->metodo_pago)->toBe('gratis');
 });
 
-test('mercado pago preference requires configured access token', function () {
-    config(['services.mercadopago.access_token' => null]);
-
+test('mercado pago preference requires organizer payment configuration', function () {
     $organizer = User::factory()->create();
     $user = User::factory()->create();
     Equipo::create([
@@ -70,7 +68,7 @@ test('mercado pago preference requires configured access token', function () {
     $this->actingAs($user)
         ->post(route('mercadopago.preferencia', $evento))
         ->assertRedirect()
-        ->assertSessionHas('error', 'Mercado Pago no está configurado todavía.');
+        ->assertSessionHas('error', 'El organizador todavía no configuró su cuenta de Mercado Pago.');
 
     expect(Inscripcion::count())->toBe(0);
 });

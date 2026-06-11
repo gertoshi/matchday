@@ -37,10 +37,15 @@ class MercadoPagoController extends Controller
             return back()->with('error', 'Este torneo no tiene pago configurado.');
         }
 
-        $accessToken = config('services.mercadopago.access_token');
+        $configuracionPago = $evento->user
+            ?->configuracionPago()
+            ->where('proveedor', 'mercadopago')
+            ->where('activo', true)
+            ->first();
+        $accessToken = $configuracionPago?->access_token;
 
         if (! is_string($accessToken) || $accessToken === '') {
-            return back()->with('error', 'Mercado Pago no está configurado todavía.');
+            return back()->with('error', 'El organizador todavía no configuró su cuenta de Mercado Pago.');
         }
 
         $inscripcion = null;
@@ -106,7 +111,7 @@ class MercadoPagoController extends Controller
                     'pending' => url('/inscripciones/mercadopago/pending'),
                 ],
                 'auto_return' => 'approved',
-                'notification_url' => url('/webhooks/mercadopago'),
+                'notification_url' => url('/webhooks/mercadopago').'?'.http_build_query(['inscripcion_id' => $inscripcion->id]),
             ]);
 
             $inscripcion->update([
@@ -156,10 +161,17 @@ class MercadoPagoController extends Controller
             return response(status: 200);
         }
 
-        $accessToken = config('services.mercadopago.access_token');
+        $inscripcionNotificada = $this->obtenerInscripcionNotificada($request);
+        $accessToken = $inscripcionNotificada?->evento?->user
+            ?->configuracionPago()
+            ->where('proveedor', 'mercadopago')
+            ->where('activo', true)
+            ->value('access_token');
 
         if (! is_string($accessToken) || $accessToken === '') {
-            Log::warning('Webhook de Mercado Pago recibido sin access token configurado.');
+            Log::warning('Webhook de Mercado Pago recibido sin configuración de pago del organizador.', [
+                'inscripcion_id' => $request->query('inscripcion_id'),
+            ]);
 
             return response(status: 200);
         }
@@ -180,23 +192,30 @@ class MercadoPagoController extends Controller
                 return response(status: 200);
             }
 
-            $status = $payment->status ?? 'unknown';
-            $datos = [
-                'mercadopago_payment_id' => (string) $payment->id,
-                'mercadopago_status' => $status,
-            ];
+            if ($inscripcionNotificada && (int) $inscripcionNotificada->id !== (int) $inscripcion->id) {
+                Log::warning('Webhook de Mercado Pago con referencia externa inconsistente.', [
+                    'inscripcion_notificada_id' => $inscripcionNotificada->id,
+                    'external_reference' => $inscripcionId,
+                ]);
 
-            if ($status === 'approved' && (float) $payment->transaction_amount >= (float) $inscripcion->cuota_inscripcion) {
-                $datos = [
-                    ...$datos,
-                    'cuota_pagada' => true,
-                    'fecha_pago' => now(),
-                    'metodo_pago' => 'mercadopago',
-                    'estado_inscripcion' => 'pendiente',
-                ];
+                return response(status: 200);
             }
 
-            $inscripcion->update($datos);
+            $status = $payment->status ?? 'unknown';
+
+            if ($status === 'approved' && (float) $payment->transaction_amount >= (float) $inscripcion->cuota_inscripcion) {
+                DB::statement('CALL sp_confirmar_pago_inscripcion(?, ?)', [
+                    $inscripcion->id,
+                    (string) $payment->id,
+                ]);
+
+                return response(status: 200);
+            }
+
+            $inscripcion->update([
+                'mercadopago_payment_id' => (string) $payment->id,
+                'mercadopago_status' => $status,
+            ]);
         } catch (\Throwable $exception) {
             report($exception);
         }
@@ -265,5 +284,16 @@ class MercadoPagoController extends Controller
         }
 
         return is_numeric($paymentId) ? (int) $paymentId : null;
+    }
+
+    private function obtenerInscripcionNotificada(Request $request): ?Inscripcion
+    {
+        $inscripcionId = $request->query('inscripcion_id');
+
+        if (! is_numeric($inscripcionId)) {
+            return null;
+        }
+
+        return Inscripcion::with('evento.user')->find((int) $inscripcionId);
     }
 }

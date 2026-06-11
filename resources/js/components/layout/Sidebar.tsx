@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     CalendarDays,
     ClipboardList,
+    CreditCard,
     Home,
     X,
     UserCircle2,
@@ -15,6 +16,7 @@ const items = [
     { label: 'Torneos', href: '/eventos', icon: Trophy },
     { label: 'Inscripciones', href: '/inscripciones', icon: ClipboardList },
     { label: 'Partidos', href: '/partidos', icon: CalendarDays },
+    { label: 'Configuración de pago', href: '/configuracion-pago', icon: CreditCard },
     { label: 'Perfil', href: '/perfil', icon: UserCircle2 },
 ];
 
@@ -62,7 +64,9 @@ function SidebarContent({
                             }`}
                         >
                             <Icon className="h-6 w-6 shrink-0" />
-                            {item.label}
+                            <span className="min-w-0 leading-tight">
+                                {item.label}
+                            </span>
                         </Link>
                     );
                 })}

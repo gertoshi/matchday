@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminEquipoController;
 use App\Http\Controllers\Admin\AdminReporteController;
 use App\Http\Controllers\Admin\AdminUsuarioController;
+use App\Http\Controllers\ConfiguracionPagoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EquipoController;
 use App\Http\Controllers\EventoController;
@@ -106,6 +107,15 @@ Route::middleware(['auth', 'verified', 'sanction'])->group(function () {
 
     Route::post('/eventos/{evento}/mercadopago/preferencia', [MercadoPagoController::class, 'crearPreferencia'])
         ->name('mercadopago.preferencia');
+
+    Route::get('/configuracion-pago', [ConfiguracionPagoController::class, 'edit'])
+        ->name('configuracion-pago.edit');
+
+    Route::post('/configuracion-pago', [ConfiguracionPagoController::class, 'store'])
+        ->name('configuracion-pago.store');
+
+    Route::put('/configuracion-pago', [ConfiguracionPagoController::class, 'update'])
+        ->name('configuracion-pago.update');
 
     Route::get('/inscripciones/mercadopago/success', [MercadoPagoController::class, 'success'])
         ->name('mercadopago.success');
