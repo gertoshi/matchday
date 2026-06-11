@@ -14,7 +14,6 @@ use MercadoPago\Client\Payment\PaymentClient;
 use MercadoPago\Client\Preference\PreferenceClient;
 use MercadoPago\Exceptions\MPApiException;
 use MercadoPago\MercadoPagoConfig;
-use MercadoPago\Webhook\WebhookSignatureValidator;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -247,28 +246,126 @@ class MercadoPagoController extends Controller
     private function firmaValida(Request $request): bool
     {
         $secret = config('services.mercadopago.webhook_secret');
+        $paymentId = $this->obtenerPaymentId($request);
+        $requestId = $request->header('x-request-id');
 
-        if (! is_string($secret) || $secret === '') {
+        if (app()->environment('local') || ! is_string($secret) || $secret === '') {
+            Log::warning('Webhook sin validación de firma porque no hay secret configurado.', [
+                'environment' => app()->environment(),
+                'x_request_id' => $requestId,
+                'payment_id' => $paymentId,
+                'secret_configurado' => is_string($secret) && $secret !== '',
+            ]);
+
             return true;
         }
 
-        try {
-            WebhookSignatureValidator::validate(
-                $request->header('x-signature'),
-                $request->header('x-request-id'),
-                (string) $request->input('data.id', $request->query('data.id')),
-                $secret,
-                300
-            );
+        $signature = $this->parseMercadoPagoSignature($request->header('x-signature'));
 
-            return true;
-        } catch (\Throwable $exception) {
+        if (! $signature['ts'] || ! $signature['v1']) {
             Log::warning('Firma inválida en webhook de Mercado Pago.', [
-                'message' => $exception->getMessage(),
+                'x_request_id' => $requestId,
+                'payment_id' => $paymentId,
+                'motivo' => 'Header x-signature incompleto o mal formado.',
             ]);
 
             return false;
         }
+
+        $dataId = $this->obtenerDataIdParaFirma($request);
+
+        if (! $dataId || ! $requestId) {
+            Log::warning('Firma inválida en webhook de Mercado Pago.', [
+                'x_request_id' => $requestId,
+                'payment_id' => $paymentId,
+                'motivo' => 'Falta data.id o x-request-id para construir el manifest.',
+            ]);
+
+            return false;
+        }
+
+        $manifest = "id:{$dataId};request-id:{$requestId};ts:{$signature['ts']};";
+        $expectedSignature = hash_hmac('sha256', $manifest, $secret);
+
+        if (! hash_equals($expectedSignature, $signature['v1'])) {
+            Log::warning('Firma inválida en webhook de Mercado Pago.', [
+                'x_request_id' => $requestId,
+                'payment_id' => $paymentId,
+                'motivo' => 'SignatureMismatch',
+            ]);
+
+            return false;
+        }
+
+        $driftSeconds = $this->timestampDriftSeconds($signature['ts']);
+
+        if ($driftSeconds !== null && $driftSeconds > 3600) {
+            Log::warning('Webhook de Mercado Pago con diferencia de timestamp.', [
+                'x_request_id' => $requestId,
+                'payment_id' => $paymentId,
+                'drift_seconds' => $driftSeconds,
+                'sugerencia' => 'Verificar reloj del servidor con timedatectl.',
+            ]);
+        }
+
+        return true;
+    }
+
+    /**
+     * @return array{ts: string|null, v1: string|null}
+     */
+    private function parseMercadoPagoSignature(?string $header): array
+    {
+        $signature = [
+            'ts' => null,
+            'v1' => null,
+        ];
+
+        if (! $header) {
+            return $signature;
+        }
+
+        foreach (explode(',', $header) as $part) {
+            [$key, $value] = array_pad(explode('=', trim($part), 2), 2, null);
+
+            if (! $key || ! $value) {
+                continue;
+            }
+
+            $key = strtolower(trim($key));
+            $value = trim($value);
+
+            if ($key === 'ts' || $key === 'v1') {
+                $signature[$key] = $value;
+            }
+        }
+
+        return $signature;
+    }
+
+    private function obtenerDataIdParaFirma(Request $request): ?string
+    {
+        $query = $request->query->all();
+        $dataId = $query['data.id']
+            ?? $query['data_id']
+            ?? data_get($query, 'data.id')
+            ?? $request->input('data.id')
+            ?? $request->input('data_id')
+            ?? $request->input('id');
+
+        return is_scalar($dataId) && (string) $dataId !== '' ? strtolower((string) $dataId) : null;
+    }
+
+    private function timestampDriftSeconds(string $timestamp): ?int
+    {
+        if (! ctype_digit($timestamp)) {
+            return null;
+        }
+
+        $timestampMs = (int) $timestamp;
+        $nowMs = (int) round(microtime(true) * 1000);
+
+        return (int) floor(abs($nowMs - $timestampMs) / 1000);
     }
 
     private function obtenerPaymentId(Request $request): ?int
